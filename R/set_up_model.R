@@ -49,7 +49,7 @@ day_to_week = as.numeric(inf_matrix_mean$sr)
 day_to_week = day_to_week - min(day_to_week) + 1
 
 
-contact_matrices = lapply(X=unique(sr_dates$survey_round), function(X){t(matrix(cms[sr==X]$cms, nrow=7))})
+contact_matrices = lapply(X=unique(sr_dates$survey_round), function(X){matrix(cms[sr==X]$cms, nrow=7)})
 
 
 data = list( 
