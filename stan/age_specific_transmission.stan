@@ -26,6 +26,8 @@ parameters {
 }
 
 
+
+
 model {
   
   
@@ -50,7 +52,7 @@ model {
   
 
   
-  for(t in 4:T){
+  for(t in 1:(T-3)){
     // combine inherent and ab susceptibility
     full_susceptibility = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t,:])));
     
@@ -62,10 +64,31 @@ model {
     
     // fit model 
     for(a in 1:A){
-      infections[t-3, a] ~ normal(next_gen[a], sigma);
+      infections[t+3, a] ~ normal(next_gen[a], sigma);
+      //next_gen[a] ~ normal(inf_mu[t+3,a], inf_sd[t+3, a]);
     }
     
   }
   
+  
+}
+
+
+generated quantities{
+  vector[A] full_susceptibility[T];                // container for ab and inherent susceptibiluty
+  matrix[A,A] transmissibility_correction[T];      // container for conversion of CM to NGM
+  vector[A] next_gens[T];
+  
+  
+  for(t in 4:T){
+    // combine inherent and ab susceptibility
+    full_susceptibility[t-3] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t-3,:])));
+    
+    // construct matrix to correct contact matrix to NGM
+    transmissibility_correction[t-3] = full_susceptibility[t-3] * to_row_vector(inf_rate);
+    
+    // estimate next generation of infections
+    next_gens[t] = (contact_matrices[day_to_week_converter[t-3]] .* transmissibility_correction[t-3])  * to_vector(infections[t-3,:]);
+  }
   
 }

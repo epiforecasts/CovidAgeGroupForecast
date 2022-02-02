@@ -1,5 +1,7 @@
 library(data.table)
 library(rstan)
+library(rstanarm)
+library(ggplot2)
 
 # load samples of infections and abprev from inc2prev
 samples = readRDS('../../../inc2prev/outputs/samples_combined_age_ab.rds')
@@ -65,10 +67,50 @@ data = list(
 # compile stan model from 'stan/age_specific_transmission.stan'
 age_mod = stan_model('stan/age_specific_transmission.stan')
 # sample from stan model
-fit = sampling(age_mod, data, warmup=100, iter=500, chains=1)
+fit = sampling(age_mod, data, warmup=100, iter=500, chains=1, control = list(max_treedepth = 12))
 
 
 # plot susceptibility and infectiousness parameters
 pairs(fit, pars = c('inf_rate[1]', 'inf_rate[2]', 'inf_rate[3]', 'inf_rate[4]', 'inf_rate[5]', 'inf_rate[6]', 'inf_rate[7]'))
 pairs(fit, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]', 'susceptibility[4]', 'susceptibility[5]', 'susceptibility[6]', 'susceptibility[7]'))
+
+
+fitmat = extract(fit)
+
+predicted_infections = fitmat$next_gens
+samples_infections = fitmat$infections
+
+pull_and_mod_inf = function(X, df=predicted_infections){
+  pi = data.table(df[,,X])
+  colnames(pi) = as.character(inf_matrix_mean$date)
+  pi[,sample:=1:dim(pi)[1]]
+  
+  pi = melt(pi, id.vars = c('sample'), measure.vars = head(colnames(pi),-1), value.name='infections', variable.name = 'date' )
+  pi[, age_group := age_groups[X]]
+  pi[, date := as.Date(date)]
+  pi
+  }
+
+
+pred_infs = rbindlist(lapply(1:7, pull_and_mod_inf, df=predicted_infections))
+samped_infs = rbindlist(lapply(1:7, pull_and_mod_inf, df=samples_infections))
+
+ggplot() + 
+  geom_point(data=pred_infs, aes(x=date, y=infections, color=age_group), alpha=0.002)+
+  geom_boxplot(data=samped_infs, aes(x=date, y=infections, color=age_group, group=date), alpha=0.2)+
+  facet_wrap(~age_group)
+
+
+ggplot() + 
+  geom_point(data=samped_infs, aes(x=date, y=infections, color=age_group), alpha=0.002)+
+  geom_line(data=inf_matrix_mean, aes(x=date, y=`2-10`))
+  
+
+predicted_infections = data.table(matrix(predicted_infections, ncol=92))
+colnames(predicted_infections) = as.character(inf_matrix_mean$date)
+
+
+dim(fitmat$transmissibility_correction)
+
+
 
