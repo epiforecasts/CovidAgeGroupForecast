@@ -39,6 +39,9 @@ setcolorder(inf_matrix_sd, colorder)
 setcolorder(anb_matrix_mean, colorder)
 setcolorder(anb_matrix_sd, colorder)
 
+
+
+# calculate mean of infections (From proportions of age groups)
 anb_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
   anb_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] * 0.9 
 
@@ -51,7 +54,7 @@ inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] 
       tail(population$pop_total,-1)))
 
 
-
+# assign the CoMix survey round to each time step 
 inf_matrix_mean[, sr := cut(date, breaks=c(sr_dates$min_date, max(sr_dates$max_date) + 100), labels = sr_dates$survey_round )]
 
 start_date = lubridate::ymd('20210401')
