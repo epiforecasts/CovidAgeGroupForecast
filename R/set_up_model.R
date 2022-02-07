@@ -55,10 +55,9 @@ inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] 
 
 
 # assign the CoMix survey round to each time step 
-inf_matrix_mean[, sr := cut(date, breaks=c(sr_dates$min_date, max(sr_dates$max_date) + 100), labels = sr_dates$survey_round )]
 
-start_date = lubridate::ymd('20210401')
-end_date = lubridate::ymd('20211001')
+start_date = lubridate::ymd('20201101')
+end_date = lubridate::ymd('20210501')
 # filter matrices to correct dates
 inf_matrix_mean = inf_matrix_mean[date < end_date & date > start_date]
 inf_matrix_sd = inf_matrix_sd[date < end_date & date > start_date]
@@ -66,12 +65,15 @@ anb_matrix_mean = anb_matrix_mean[date < end_date & date > start_date]
 anb_matrix_sd = anb_matrix_sd[date < end_date & date > start_date]
 sr_dates = sr_dates[min_date < end_date & max_date > start_date]
 
+inf_matrix_mean[, sr := cut(date, breaks=c(sr_dates$min_date, max(sr_dates$max_date)), labels = sort(sr_dates$survey_round) )]
+
+
 # create vector to indicate correct contact matrix
 day_to_week = as.numeric(inf_matrix_mean$sr)
 day_to_week = day_to_week - min(day_to_week) + 1
 
 # load contact matrices into list
-contact_matrices = lapply(X=unique(sr_dates$survey_round), function(X){t(matrix(cms[sr==X]$cms, nrow=7))})
+contact_matrices = lapply(X=sort(unique(sr_dates$survey_round)), function(X){t(matrix(cms[sr==X]$cms, nrow=7))})
 
 # set up data input for stan 
 data = list( 
@@ -88,7 +90,7 @@ data = list(
 # compile stan model from 'stan/age_specific_transmission.stan'
 age_mod = stan_model('stan/age_specific_transmission.stan')
 # sample from stan model
-fit = sampling(age_mod, data, warmup=100, iter=500, chains=1, control = list(max_treedepth = 12))
+fit = sampling(age_mod, data, warmup=250, iter=750, chains=1, control = list(max_treedepth = 12))
 
 
 # plot susceptibility and infectiousness parameters
@@ -99,7 +101,7 @@ stan_plot(fit, pars = c('inf_rate[1]', 'inf_rate[2]', 'inf_rate[3]', 'inf_rate[4
 stan_plot(fit, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]', 'susceptibility[4]', 'susceptibility[5]', 'susceptibility[6]', 'susceptibility[7]'))
 
 
-fitmat = extract(fit)
+fitmat = rstan::extract(fit)
 
 predicted_infections = fitmat$next_gens
 samples_infections = fitmat$infections
@@ -121,6 +123,7 @@ samped_infs = rbindlist(lapply(1:7, pull_and_mod_inf, df=samples_infections))
 
 ggplot() + 
   geom_point(data=samped_infs, aes(x=date, y=infections, group=date), alpha=0.002, color='black')+
+  geom_point(data=melt(inf_matrix_mean[,-'sr'], id.vars = 'date', variable.name = 'age_group'), aes(x=date, y=value), alpha=0.5, color='white')+
   geom_point(data=pred_infs, aes(x=date, y=infections, color=age_group), alpha=0.002)+
   facet_wrap(~age_group)
 
