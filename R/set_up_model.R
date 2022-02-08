@@ -90,7 +90,7 @@ data = list(
 # compile stan model from 'stan/age_specific_transmission.stan'
 age_mod = stan_model('stan/age_specific_transmission.stan')
 # sample from stan model
-fit = sampling(age_mod, data, warmup=250, iter=750, chains=1, control = list(max_treedepth = 12))
+fit = sampling(age_mod, data, warmup=1000, iter=2000, chains=1, control = list(max_treedepth = 12, adapt_delta=0.95),seed = sample.int(.Machine$integer.max, 1))
 
 
 # plot susceptibility and infectiousness parameters
@@ -99,6 +99,8 @@ pairs(fit, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]
 
 stan_plot(fit, pars = c('inf_rate[1]', 'inf_rate[2]', 'inf_rate[3]', 'inf_rate[4]', 'inf_rate[5]', 'inf_rate[6]', 'inf_rate[7]'))
 stan_plot(fit, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]', 'susceptibility[4]', 'susceptibility[5]', 'susceptibility[6]', 'susceptibility[7]'))
+traceplot(fit, pars = c('inf_rate[1]', 'inf_rate[2]', 'inf_rate[3]', 'inf_rate[4]', 'inf_rate[5]', 'inf_rate[6]', 'inf_rate[7]'))
+traceplot(fit, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]', 'susceptibility[4]', 'susceptibility[5]', 'susceptibility[6]', 'susceptibility[7]'))
 
 
 fitmat = rstan::extract(fit)
@@ -129,4 +131,38 @@ ggplot() +
 
 
 saveRDS(fit, 'alpha_fit.rds')
+
+infc = as.vector(c(0.2,0.2,0.3,0.3,0.3,0.3,0.3))
+susc = as.vector(c(0.5,0.5,1.0, 0.9,0.9,0.9,0.9))
+predicted_inc = data.table()
+anb_prot = 0.85
+
+for(t in 1:data$T){
+
+  next_gen = as.matrix(diag(susc*(1-(anb_prot * anb_matrix_mean[,-c('date')][t,]))) %*% as.matrix(contact_matrices[day_to_week[t][[1]]][[1]]) %*% diag(infc)) %*% t(as.matrix(inf_matrix_mean[,-c('date', 'sr')][t,]))
+  
+  
+  predicted_inc = rbind(predicted_inc, t(next_gen))
+  
+
+  
+  
+}
+
+colnames(predicted_inc)  = colnames(inf_matrix_mean[,-c('date', 'sr')])
+predicted_inc[, date := inf_matrix_mean$date + 4]
+predicted_inc_long = melt(predicted_inc, id.vars = 'date', measure.vars = colnames(inf_matrix_mean[,-c('date', 'sr')]))
+actualest_inc_long = melt(inf_matrix_mean[,-'sr'], id.vars = 'date', measure.vars = colnames(inf_matrix_mean[,-c('date', 'sr')]))
+antibody_prev_long = melt(anb_matrix_mean, id.vars = 'date', measure.vars = colnames(inf_matrix_mean[,-c('date')]))
+
+
+ggplot() + 
+
+  geom_point(data=predicted_inc_long, aes(x=date, value))+
+  geom_line(data=actualest_inc_long, aes(x=date, value)) + 
+  facet_wrap(~variable)
+  
+ggplot() + 
+  geom_point(data=antibody_prev_long, aes(x=date, value))+
+  facet_wrap(~variable)
 
