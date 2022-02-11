@@ -90,7 +90,7 @@ data = list(
 # compile stan model from 'stan/age_specific_transmission.stan'
 age_mod = stan_model('stan/age_specific_transmission.stan')
 # sample from stan model
-fit = sampling(age_mod, data, warmup=1000, iter=2000, chains=1, control = list(max_treedepth = 12, adapt_delta=0.95),seed = sample.int(.Machine$integer.max, 1))
+fit = sampling(age_mod, data, warmup=1000, iter=2000, chains=1, control = list(max_treedepth = 12, adapt_delta=0.99),seed = sample.int(.Machine$integer.max, 1))
 
 
 # plot susceptibility and infectiousness parameters

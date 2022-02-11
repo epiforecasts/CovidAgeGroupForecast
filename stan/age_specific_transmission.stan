@@ -55,7 +55,7 @@ model {
 
   vector[A] full_susceptibility;                // container for ab and inherent susceptibiluty
   matrix[A,A] transmissibility_correction;      // container for conversion of CM to NGM
-  vector[A] next_gen;
+  vector[A] next_gen[T];
 
 
   //inf_rate ~ beta(5.0, 1.0);       // age specific rate of infection on contact
@@ -92,18 +92,18 @@ model {
   
   for(t in 1:(T-5)){
     // combine inherent and ab susceptibility
-    full_susceptibility = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])));
+    full_susceptibility = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection));
     
     // construct matrix to correct contact matrix to NGM
     transmissibility_correction = full_susceptibility * to_row_vector(inf_rate);
     
     // estimate next generation of infections
-    next_gen = (diag_matrix(full_susceptibility) * contact_matrices[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t]);
+    next_gen[t] = (diag_matrix(full_susceptibility) * contact_matrices[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t]);
     
     // fit model 
     for(a in 1:A){
       //infections_fixed[t+3, a] ~ normal(next_gen[a], inf_sd[t,a]);
-      next_gen[a] ~ normal(inf_mu[t+5,a], inf_sd[t+5, a]);
+      next_gen[t][a] ~ normal(inf_mu[t+5,a], inf_sd[t+5, a]);
     }
     
   }
@@ -120,7 +120,7 @@ generated quantities{
   
   for(t in 6:T){
     // combine inherent and ab susceptibility
-    full_susceptibility[t-5] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t-5]) ));
+    full_susceptibility[t-5] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t-5])*ab_protection ));
     
     // construct matrix to correct contact matrix to NGM
     transmissibility_correction[t-5] = full_susceptibility[t-5] * rep_row_vector(1,7);//to_row_vector(inf_rate);
