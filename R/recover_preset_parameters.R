@@ -47,32 +47,33 @@ anb_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )
 
 inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
   data.table(t(t(inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 
-      tail(population$pop_total,-1)))
+                 tail(population$pop_total,-1)))
 
 inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
   data.table(t(t(inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 
-      tail(population$pop_total,-1)))
+                 tail(population$pop_total,-1)))
 
 
 # assign the CoMix survey round to each time step 
 
-start_date = lubridate::ymd('20201201')
-end_date = lubridate::ymd('20210301')
+start_date = lubridate::ymd('20201101')
+end_date = lubridate::ymd('20210501')
 # filter matrices to correct dates
 inf_matrix_mean = inf_matrix_mean[date < end_date & date > start_date]
 inf_matrix_sd = inf_matrix_sd[date < end_date & date > start_date]
 anb_matrix_mean = anb_matrix_mean[date < end_date & date > start_date]
 anb_matrix_sd = anb_matrix_sd[date < end_date & date > start_date]
+sr_dates = sr_dates[min_date < end_date & max_date > start_date]
 
 inf_matrix_mean[, sr := cut(date, breaks=c(sr_dates$min_date, max(sr_dates$max_date)), labels = sort(sr_dates$survey_round) )]
 
-sr_dates = sr_dates[survey_round %in% inf_matrix_mean$sr]
+
 # create vector to indicate correct contact matrix
 day_to_week = as.numeric(inf_matrix_mean$sr)
 day_to_week = day_to_week - min(day_to_week) + 1
 
 # load contact matrices into list
-contact_matrices = lapply(X=sort(unique(sr_dates$survey_round)), function(X){matrix(cms[sr==X]$cms, nrow=7)})
+contact_matrices = lapply(X=sort(unique(sr_dates$survey_round)), function(X){t(matrix(cms[sr==X]$cms, nrow=7))})
 
 # set up data input for stan 
 data = list( 
@@ -85,83 +86,43 @@ data = list(
   anb_sd = anb_matrix_sd[,-'date'],
   day_to_week_converter = day_to_week,
   contact_matrices = contact_matrices
-  )
+)
 # compile stan model from 'stan/age_specific_transmission.stan'
-age_mod = stan_model('stan/age_specific_transmission-NCP.stan')
+age_mod_pp = stan_model('stan/age_specific_transmission_diff_prior_pred.stan')
 # sample from stan model
-fit = sampling(age_mod, data, warmup=250, iter=500, chains=1, control = list(max_treedepth = 12, adapt_delta=0.8),seed = sample.int(.Machine$integer.max, 1))
+fit = sampling(age_mod_pp, data, warmup=50, iter=100, chains=1, control = list(max_treedepth = 12, adapt_delta=0.99),seed = sample.int(.Machine$integer.max, 1))
 
-
-# plot susceptibility and infectiousness parameters
-pairs(fit, pars = c('inf_rate[1]', 'inf_rate[2]', 'inf_rate[3]', 'inf_rate[4]', 'inf_rate[5]', 'inf_rate[6]', 'inf_rate[7]'))
-pairs(fit, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]', 'susceptibility[4]', 'susceptibility[5]', 'susceptibility[6]', 'susceptibility[7]'))
 
 stan_plot(fit, pars = c('inf_rate[1]', 'inf_rate[2]', 'inf_rate[3]', 'inf_rate[4]', 'inf_rate[5]', 'inf_rate[6]', 'inf_rate[7]'))
 stan_plot(fit, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]', 'susceptibility[4]', 'susceptibility[5]', 'susceptibility[6]', 'susceptibility[7]'))
-traceplot(fit, pars = c('inf_rate[1]', 'inf_rate[2]', 'inf_rate[3]', 'inf_rate[4]', 'inf_rate[5]', 'inf_rate[6]', 'inf_rate[7]'))
-traceplot(fit, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]', 'susceptibility[4]', 'susceptibility[5]', 'susceptibility[6]', 'susceptibility[7]'))
-
 
 fitmat = rstan::extract(fit)
 
-predicted_infections = fitmat$next_gens
-samples_infections = fitmat$infections
+fitmat$suscept_hyper_mu
 
-pull_and_mod_inf = function(X, df=predicted_infections){
-  pi = data.table(df[,,X])
-  colnames(pi) = as.character(inf_matrix_mean$date)
-  pi[,sample:=1:dim(pi)[1]]
-  
-  pi = melt(pi, id.vars = c('sample'), measure.vars = head(colnames(pi),-1), value.name='infections', variable.name = 'date' )
-  pi[, age_group := age_groups[X]]
-  pi[, date := as.Date(date)]
-  pi
-  }
+inf_matrix_mean_sim = fitmat$next_gen[1,,]
+inf_matrix_mean_sim[is.na(inf_matrix_mean_sim)] = 0.0
 
 
-pred_infs = rbindlist(lapply(1:7, pull_and_mod_inf, df=predicted_infections))
-samped_infs = rbindlist(lapply(1:7, pull_and_mod_inf, df=samples_infections))
-
-ggplot() + 
-  geom_point(data=samped_infs, aes(x=date, y=infections, group=date), alpha=0.002, color='black')+
-  geom_point(data=melt(inf_matrix_mean[,-'sr'], id.vars = 'date', variable.name = 'age_group'), aes(x=date, y=value), alpha=0.5, color='white')+
-  geom_point(data=pred_infs, aes(x=date, y=infections, color=age_group), alpha=0.002)+
-  facet_wrap(~age_group)
-
-
-saveRDS(fit, 'alpha_fit.rds')
-
-infc = as.vector(c(0.2,0.2,0.3,0.3,0.3,0.3,0.3))
-susc = as.vector(c(0.5,0.5,1.0, 0.9,0.9,0.9,0.9))
-predicted_inc = data.table()
-anb_prot = 0.85
-
-for(t in 1:data$T){
-
-  next_gen = as.matrix(diag(susc*(1-(anb_prot * anb_matrix_mean[,-c('date')][t,]))) %*% as.matrix(contact_matrices[day_to_week[t][[1]]][[1]]) %*% diag(infc)) %*% t(as.matrix(inf_matrix_mean[,-c('date', 'sr')][t,]))
-  
-  
-  predicted_inc = rbind(predicted_inc, t(next_gen))
-  
-
-  
-  
-}
-
-colnames(predicted_inc)  = colnames(inf_matrix_mean[,-c('date', 'sr')])
-predicted_inc[, date := inf_matrix_mean$date + 4]
-predicted_inc_long = melt(predicted_inc, id.vars = 'date', measure.vars = colnames(inf_matrix_mean[,-c('date', 'sr')]))
-actualest_inc_long = melt(inf_matrix_mean[,-'sr'], id.vars = 'date', measure.vars = colnames(inf_matrix_mean[,-c('date', 'sr')]))
-antibody_prev_long = melt(anb_matrix_mean, id.vars = 'date', measure.vars = colnames(inf_matrix_mean[,-c('date')]))
+data_ng = list( 
+  T = dim(inf_matrix_mean[,-c('date', 'sr')])[1],
+  W = dim(sr_dates)[1],
+  A = dim(inf_matrix_mean[,-c('date', 'sr')])[2],
+  inf_mu = inf_matrix_mean[,-c('date', 'sr')],
+  inf_mu_ng = inf_matrix_mean_sim,
+  inf_sd = inf_matrix_sd[,-'date'],
+  anb_mu = anb_matrix_mean[,-'date'],
+  anb_sd = anb_matrix_sd[,-'date'],
+  day_to_week_converter = day_to_week,
+  contact_matrices = contact_matrices
+)
+# compile stan model from 'stan/age_specific_transmission.stan'
+age_mod_ng = stan_model('stan/age_specific_transmission_ng_inf.stan')
+# sample from stan model
+fit_recover = sampling(age_mod_ng, data_ng, warmup=500, iter=1000, chains=1, control = list(max_treedepth = 12, adapt_delta=0.80),seed = sample.int(.Machine$integer.max, 1))
 
 
-ggplot() + 
-
-  geom_point(data=predicted_inc_long, aes(x=date, value))+
-  geom_line(data=actualest_inc_long, aes(x=date, value)) + 
-  facet_wrap(~variable)
-  
-ggplot() + 
-  geom_point(data=antibody_prev_long, aes(x=date, value))+
-  facet_wrap(~variable)
+stan_plot(fit_recover, pars = c('inf_rate[1]', 'inf_rate[2]', 'inf_rate[3]', 'inf_rate[4]', 'inf_rate[5]', 'inf_rate[6]', 'inf_rate[7]'))
+stan_plot(fit_recover, pars = c('susceptibility[1]', 'susceptibility[2]', 'susceptibility[3]', 'susceptibility[4]', 'susceptibility[5]', 'susceptibility[6]', 'susceptibility[7]'))
+stan_plot(fit_recover, pars = c('ab_protection'))
 

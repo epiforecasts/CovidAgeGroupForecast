@@ -30,12 +30,22 @@ parameters {
   real <lower=0> inf_rate_hyper_sd; 
   real <lower=0, upper=1> suscept_hyper_mu;
   real <lower=0> suscept_hyper_sd; 
-  real<lower=0,upper=1> inf_rate[A];       // age specific rate of infection conditional on contact with 100% susceptibility
-  real<lower=0,upper=1> susceptibility[A]; // age specific susceptibility 
+  real inf_prime[A];
+  real sus_prime[A];
+  //real<lower=0,upper=1> inf_rate[A];       // age specific rate of infection conditional on contact with 100% susceptibility
+  //real<lower=0,upper=1> susceptibility[A]; // age specific susceptibility 
   real<lower=0,upper=1> ab_protection; // protection offered by antibodies
   // real<lower=0> sigma; // uncertainty in estimates
 }
 
+transformed parameters{
+  real inf_rate[A];
+  real susceptibility[A];
+  for(a in 1:A){
+    inf_rate[a] = inf_rate_hyper_mu + inf_rate_hyper_sd * inf_prime[a];
+    susceptibility[a] = suscept_hyper_mu + suscept_hyper_sd * sus_prime[a];
+  }
+}
 
 
 model {
@@ -48,16 +58,16 @@ model {
 
   //inf_rate ~ beta(5.0, 1.0);       // age specific rate of infection on contact
   //susceptibility ~ beta(5.0, 1.0);   // age specific inherent susceptibility 
-  ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
+  ab_protection ~ normal(0.85, 0.001)T[0,1];                  // protectiveness of antibodies
   
-  inf_rate_hyper_mu ~ normal(0.25, 0.01)T[0,1];
+  inf_rate_hyper_mu ~ normal(0.15, 0.01)T[0,1];
   inf_rate_hyper_sd ~ normal(0.05,0.001)T[0,];
-  suscept_hyper_mu ~ normal(0.5, 0.01)T[0,1];
+  suscept_hyper_mu ~ normal(0.8, 0.01)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.001)T[0,];
   
   for(a in 1:A){
-      inf_rate[a] ~ normal(inf_rate_hyper_mu, inf_rate_hyper_sd)T[0,1];
-      susceptibility[a] ~ normal(suscept_hyper_mu, suscept_hyper_sd)T[0,1];
+    inf_prime[a] ~ normal(0,0.01);
+    sus_prime[a] ~ normal(0,0.01);
     }
   
   
@@ -80,7 +90,7 @@ model {
   
   for(t in 1:(T-5)){
     // combine inherent and ab susceptibility
-    full_susceptibility = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection));
+    full_susceptibility = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])));
     
     // construct matrix to correct contact matrix to NGM
     transmissibility_correction = full_susceptibility * to_row_vector(inf_rate);
@@ -91,7 +101,7 @@ model {
     // fit model 
     for(a in 1:A){
       //infections_fixed[t+3, a] ~ normal(next_gen[a], inf_sd[t,a]);
-      next_gen[t][a] ~ normal(inf_mu[t+5,a], inf_sd[t+5, a]);
+      //next_gen[t][a] ~ normal(inf_mu[t+5,a], inf_sd[t+5, a]);
     }
     
   }
@@ -108,7 +118,7 @@ generated quantities{
   
   for(t in 6:T){
     // combine inherent and ab susceptibility
-    full_susceptibility[t-5] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t-5])*ab_protection ));
+    full_susceptibility[t-5] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t-5]) ));
     
     // construct matrix to correct contact matrix to NGM
     transmissibility_correction[t-5] = full_susceptibility[t-5] * rep_row_vector(1,7);//to_row_vector(inf_rate);

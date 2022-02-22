@@ -3,7 +3,7 @@ data {
   int<lower=0> T; //number of days in time-series
   int<lower=0> W; //number of weeks
   int<lower=0> A; //age groups
-  
+
   real inf_mu[T,A];                    // infections parameter matrix
   real inf_sd[T,A];                    // infections parameter matrix
   real anb_mu[T,A];                    // antibodies parameter matrix
@@ -30,12 +30,24 @@ parameters {
   real <lower=0> inf_rate_hyper_sd; 
   real <lower=0, upper=1> suscept_hyper_mu;
   real <lower=0> suscept_hyper_sd; 
-  real<lower=0,upper=1> inf_rate[A];       // age specific rate of infection conditional on contact with 100% susceptibility
-  real<lower=0,upper=1> susceptibility[A]; // age specific susceptibility 
+  real inf_prime[A];
+  real sus_prime[A];
+  //real<lower=0,upper=1> inf_rate[A];       // age specific rate of infection conditional on contact with 100% susceptibility
+  //real<lower=0,upper=1> susceptibility[A]; // age specific susceptibility 
   real<lower=0,upper=1> ab_protection; // protection offered by antibodies
   // real<lower=0> sigma; // uncertainty in estimates
 }
 
+transformed parameters{
+  real inf_rate[A];
+  real susceptibility[A];
+  for(a in 1:A){
+    inf_rate[a] = inf_rate_hyper_mu + inf_rate_hyper_sd * inf_prime[a];
+    susceptibility[a] = suscept_hyper_mu + suscept_hyper_sd * sus_prime[a];
+  }
+  
+  
+}
 
 
 model {
@@ -56,8 +68,8 @@ model {
   suscept_hyper_sd ~ normal(0.1, 0.001)T[0,];
   
   for(a in 1:A){
-      inf_rate[a] ~ normal(inf_rate_hyper_mu, inf_rate_hyper_sd)T[0,1];
-      susceptibility[a] ~ normal(suscept_hyper_mu, suscept_hyper_sd)T[0,1];
+    inf_prime[a] ~ normal(0,0.1);
+    sus_prime[a] ~ normal(0,0.1);
     }
   
   
@@ -104,6 +116,7 @@ generated quantities{
   vector[A] full_susceptibility[T];                // container for ab and inherent susceptibiluty
   matrix[A,A] transmissibility_correction[T];      // container for conversion of CM to NGM
   vector[A] next_gens[T];
+  vector[A] forecast_gens[5]; 
   
   
   for(t in 6:T){
@@ -117,5 +130,16 @@ generated quantities{
     next_gens[t] = (diag_matrix(full_susceptibility[t-5]) * contact_matrices[day_to_week_converter[t-5]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-3]);
     //next_gens[t] = (contact_matrices[day_to_week_converter[t-3]] .* transmissibility_correction[t-3])  * to_vector(infections_fixed[t-3,:]);
   }
+  
+  
+  for(f in 1:5){
+    
+      full_susceptibility[T-(6-f)] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[T-(6-f)])*ab_protection ));
+    
+      forecast_gens[f] = (diag_matrix(full_susceptibility[T-(6-f)]) * contact_matrices[day_to_week_converter[T-(6-f)]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[T-(6-f)]);
+    
+  }
+  
+
   
 }
