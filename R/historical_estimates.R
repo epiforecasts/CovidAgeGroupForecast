@@ -89,7 +89,9 @@ ggplot(actualest_inc_long)+
 
 age_mods = list(cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmatmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitnothing.stan'))
 
-dates = list(20201201, 20210201, 20210501, 20210801, 20211201)
+dates = tail(sr_dates$min_date, -5)
+
+
 
 period = 30 
 
@@ -105,7 +107,8 @@ for(r in 1:4){
     anb_matrix_mean = anb_matrix_mean, 
     anb_matrix_sd = anb_matrix_sd, 
     cms = cms, 
-    runindex = r
+    runindex = r, 
+    quantiles=c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95)
   )
   
   all_est = append(all_est, est)
@@ -129,7 +132,6 @@ summary_preds[name=='next_gens',  date := as.Date(forecast_date) - period + time
 summary_preds[, age_group := age_groups[age_index]]
 
 summary_preds = merge(summary_preds, actualest_inc_long, by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x = T, all.y = F )
-summary_preds = merge(summary_preds, actualest_inc_long, by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x=T, all.y = F )
 
 summary_conts = data.table()
 for(i in 1:length(all_est)){
@@ -143,3 +145,5 @@ saveRDS(summary_conts, 'outputs/summary_conts.rds')
 d = sapply(dates, lubridate::ymd)
 
 plot_parameters(summary_pars, d)
+
+plot_trajectories_one_ax(summary_preds, head(d, -25))
