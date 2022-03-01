@@ -7,6 +7,18 @@ library(ggplot2)
 samples = readRDS('../../../inc2prev/outputs/samples_combined_age_ab_A.rds')
 samples = data.table(samples)
 
+estimates_ = readRDS('../../../inc2prev/outputs/estimates_combined_age_ab_A.rds')
+ab_samples = data.table(samples)[name == 'dab']
+estimates = read.csv(file = '../estimates_age_ab.csv')
+
+ab_estimates = data.table(estimates)[name == 'gen_dab']
+ab_estimates[, date := as.Date(date)]
+ab_estimates_mu = ab_estimates[, c('mean', 'variable', 'date')]
+
+anb_matrix_mean  = dcast(ab_estimates, value.var = 'mean', date ~ variable)
+anb_matrix_sd = dcast(ab_estimates, value.var = 'sd', date ~ variable)
+
+
 # load mean contact matrices from contactmatrixcode
 cms = readRDS('cms.rds')
 sr_dates = readRDS('sr_dates.rds')
@@ -22,15 +34,15 @@ inf_matrix_sd = dcast(samples[name=='infections', c('sample', 'variable', 'value
                       value.var = 'value', 
                       fun.aggregate = sd)
 
-anb_matrix_mean = dcast(samples[name=='dab', c('sample', 'variable', 'value', 'date')], 
-                        date ~ variable, 
-                        value.var = 'value', 
-                        fun.aggregate = mean)
-anb_matrix_sd = dcast(samples[name=='dab', c('sample', 'variable', 'value', 'date')], 
-                      date ~ variable, 
-                      value.var = 'value', 
-                      fun.aggregate = sd)
-
+#anb_matrix_mean = dcast(samples[name=='dab', c('sample', 'variable', 'value', 'date')], 
+#                        date ~ variable, 
+#                        value.var = 'value', 
+#                        fun.aggregate = mean)
+#anb_matrix_sd = dcast(samples[name=='dab', c('sample', 'variable', 'value', 'date')], 
+#                      date ~ variable, 
+#                      value.var = 'value', 
+#                      fun.aggregate = sd)
+#
 # set the correct order for age columns in matrices 
 age_groups =  c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )
 colorder= c('date', age_groups )
@@ -42,8 +54,8 @@ setcolorder(anb_matrix_sd, colorder)
 
 
 # calculate mean of infections (From proportions of age groups)
-anb_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
-  anb_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] * 0.9 
+#anb_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
+#  anb_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] * 0.9 
 
 inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
   data.table(t(t(inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 

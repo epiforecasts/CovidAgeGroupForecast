@@ -1,0 +1,145 @@
+library(data.table)
+library(ggplot2)
+library(tidyverse)
+
+library(future.apply)
+library(future.callr)
+library(future)
+
+library(cmdstanr)
+
+source('R/fit_model.R')
+source('R/plotting.R')
+
+
+# load samples of infections and abprev from inc2prev
+samples = readRDS('../../../inc2prev/outputs/samples_combined_age_ab_A.rds')
+samples = data.table(samples)
+
+estimates_ = readRDS('../../../inc2prev/outputs/estimates_combined_age_ab_A.rds')
+ab_samples = data.table(samples)[name == 'dab']
+estimates = read.csv(file = '../estimates_age_ab.csv')
+
+inf_estimates = data.table(estimates)[name == 'infections']
+inf_estimates[, date := as.Date(date)]
+inf_estimates_mu = ab_estimates[, c('mean', 'variable', 'date')]
+
+inf_matrix_mean  = dcast(inf_estimates, value.var = 'mean', date ~ variable)
+inf_matrix_sd = dcast(inf_estimates, value.var = 'sd', date ~ variable)
+
+
+ab_estimates = data.table(estimates)[name == 'gen_dab']
+ab_estimates[, date := as.Date(date)]
+ab_estimates_mu = ab_estimates[, c('mean', 'variable', 'date')]
+
+anb_matrix_mean  = dcast(ab_estimates, value.var = 'mean', date ~ variable)
+anb_matrix_sd = dcast(ab_estimates, value.var = 'sd', date ~ variable)
+
+
+# load mean contact matrices from contactmatrixcode
+cms = readRDS('cms.rds')
+sr_dates = readRDS('sr_dates.rds')
+population = readRDS('population.rds')
+
+# create matrices of mean and standard deviations for infections and ab_prevalence
+#inf_matrix_mean = dcast(samples[name=='infections', c('sample', 'variable', 'value', 'date')], 
+#                        date ~ variable, 
+#                        value.var = 'value', 
+#                        fun.aggregate = mean)
+#inf_matrix_sd = dcast(samples[name=='infections', c('sample', 'variable', 'value', 'date')], 
+#                      date ~ variable, 
+#                      value.var = 'value', 
+#                      fun.aggregate = sd)
+#
+#anb_matrix_mean = dcast(samples[name=='dab', c('sample', 'variable', 'value', 'date')], 
+#                        date ~ variable, 
+#                        value.var = 'value', 
+#                        fun.aggregate = mean)
+#anb_matrix_sd = dcast(samples[name=='dab', c('sample', 'variable', 'value', 'date')], 
+#                      date ~ variable, 
+#                      value.var = 'value', 
+#                      fun.aggregate = sd)
+#
+# set the correct order for age columns in matrices 
+age_groups =  c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )
+colorder= c('date', age_groups )
+setcolorder(inf_matrix_mean, colorder)
+setcolorder(inf_matrix_sd, colorder)
+setcolorder(anb_matrix_mean, colorder)
+setcolorder(anb_matrix_sd, colorder)
+
+
+
+inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
+  data.table(t(t(inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 
+                 tail(population$pop_total,-1)))
+
+inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
+  data.table(t(t(inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 
+                 tail(population$pop_total,-1)))
+
+
+
+actualest_inc_long = melt(inf_matrix_mean[,-'sr'], id.vars = 'date', measure.vars = colnames(inf_matrix_mean[,-c('date', 'sr')]))
+actualest_inc_long[, age_group := variable]
+
+ggplot(actualest_inc_long)+
+  geom_point(aes(x=date, y = value, color=variable))
+
+
+age_mods = list(cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmatmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitnothing.stan'))
+
+dates = list(20201201, 20210201, 20210501, 20210801, 20211201)
+
+period = 30 
+
+plan(callr, workers = future::availableCores())
+all_est = list()
+for(r in 1:4){ 
+  est <- future_lapply(
+    dates, fit_NGM_model_for_date_range,
+    age_mod = age_mods[[r]],
+    period = period, 
+    inf_matrix_mean = inf_matrix_mean, 
+    inf_matrix_sd = inf_matrix_sd, 
+    anb_matrix_mean = anb_matrix_mean, 
+    anb_matrix_sd = anb_matrix_sd, 
+    cms = cms, 
+    runindex = r
+  )
+  
+  all_est = append(all_est, est)
+  
+}
+
+
+summary_pars = data.table()
+for(i in 1:length(all_est)){
+  summary_pars = rbind(summary_pars, data.table(all_est[[i]]$summary_pars))
+}
+
+summary_preds = data.table()
+for(i in 1:length(all_est)){
+  summary_preds = rbind(summary_preds, data.table(all_est[[i]]$summary_preds))
+}
+
+
+summary_preds[name=='forecast_gens', date := as.Date(forecast_date) + time_index]
+summary_preds[name=='next_gens',  date := as.Date(forecast_date) - period + time_index]
+summary_preds[, age_group := age_groups[age_index]]
+
+summary_preds = merge(summary_preds, actualest_inc_long, by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x = T, all.y = F )
+summary_preds = merge(summary_preds, actualest_inc_long, by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x=T, all.y = F )
+
+summary_conts = data.table()
+for(i in 1:length(all_est)){
+  summary_preds = rbind(summary_preds, data.table(all_est[[i]]$summary_conts))
+}
+
+saveRDS(summary_pars, 'outputs/summary_pars.rds')
+saveRDS(summary_preds, 'outputs/summary_preds.rds')
+saveRDS(summary_conts, 'outputs/summary_conts.rds')
+
+d = sapply(dates, lubridate::ymd)
+
+plot_parameters(summary_pars, d)
