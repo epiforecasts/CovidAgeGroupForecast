@@ -48,3 +48,50 @@ score_forecasts = function(summary_preds) {
   
 }
 
+interval_scores = data.table()
+for(cast in unique(preds_to_score$model)){
+  
+  
+  true_values <- unique(preds_to_score[value_type=='forecast_gens' & model=='1', c('value_date','true_value')])$true_value
+  dates =  unique(preds_to_score[value_type=='forecast_gens' & model==cast, c('value_date','true_value')])$value_date
+  interval_range = 90
+  lower = preds_to_score[value_type=='forecast_gens' & model==cast & quantile==0.1,]$prediction
+  upper = preds_to_score[value_type=='forecast_gens' & model==cast & quantile==0.9,]$prediction
+  
+  
+  interval_scores = rbind(
+    interval_scores, 
+    data.table(
+      date = dates,
+      score =   scoringutils::interval_score(true_values = true_values,
+                                             lower = lower,
+                                             upper = upper,
+                                             interval_range = interval_range), 
+      model = cast
+      
+    )
+    
+  )
+
+
+  
+  
+}
+
+
+interval_scores
+
+
+true_values <- 
+interval_range <- 90
+alpha <- (100 - interval_range) / 100
+lower <- qnorm(alpha/2, rnorm(30, mean = 1:30))
+upper <- qnorm((1- alpha/2), rnorm(30, mean = 1:30))
+
+interval_score(true_values = true_values,
+               lower = lower,
+               upper = upper,
+               interval_range = interval_range)
+
+
+

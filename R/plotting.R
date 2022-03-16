@@ -33,8 +33,8 @@ plot_trajectories_one_ax = function(summary_preds, d){
     facet_wrap(~age_index, scales='free', labeller =labeller(age_index=age_labs), ncol=2)+
     scale_x_date(name='')+
     scale_y_continuous(name='infections')+
-    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data'))+
-    scale_fill_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data'))+
+    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'baseline gen last difference', 'baseline last gen value'))+
+    scale_fill_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'baseline gen last difference', 'baseline last gen value'))+
     theme_minimal()
 }
 

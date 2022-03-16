@@ -24,6 +24,11 @@ inf_estimates = data.table(estimates)[name == 'infections']
 inf_estimates[, date := as.Date(date)]
 inf_estimates_mu = ab_estimates[, c('mean', 'variable', 'date')]
 
+ggplot(inf_estimates) + 
+  geom_line(aes(x=date, y=median))+
+  geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
+  facet_wrap(~variable)
+
 inf_matrix_mean  = dcast(inf_estimates, value.var = 'mean', date ~ variable)
 inf_matrix_sd = dcast(inf_estimates, value.var = 'sd', date ~ variable)
 
@@ -133,6 +138,13 @@ summary_preds[, age_group := age_groups[age_index]]
 
 summary_preds = merge(summary_preds, actualest_inc_long, by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x = T, all.y = F )
 
+
+baselines = get_baselines(inf_estimates, summary_preds)
+baselines[, variable := age_group]
+baselines [, value := NA]
+summary_preds = rbind(summary_preds, baselines)
+
+
 summary_conts = data.table()
 for(i in 1:length(all_est)){
   summary_preds = rbind(summary_preds, data.table(all_est[[i]]$summary_conts))
@@ -142,8 +154,14 @@ saveRDS(summary_pars, 'outputs/summary_pars.rds')
 saveRDS(summary_preds, 'outputs/summary_preds.rds')
 saveRDS(summary_conts, 'outputs/summary_conts.rds')
 
-d = sapply(dates, lubridate::ymd)
+d = lapply(dates, lubridate::ymd)
+unlist(d)
 
 plot_parameters(summary_pars, d)
 
-plot_trajectories_one_ax(summary_preds, head(d, -25))
+
+age_labs = age_groups
+names(age_labs) = 1:7
+
+
+plot_trajectories_one_ax(summary_preds, head(d,-25))
