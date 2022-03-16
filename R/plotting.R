@@ -30,7 +30,7 @@ plot_trajectories_one_ax = function(summary_preds, d){
     #geom_point(data=summary_preds[name == 'next_gens' & forecast_date %in% d,], aes(x=date, y=`50%`), color='green', size=0.01)+
     geom_point(data=summary_preds[name == 'forecast_gens' & forecast_date %in% d,], aes(x=date, y=`50%`, color=as.character(run)), size=0.01)+
     
-    facet_wrap(~age_index, scales='free', labeller =labeller(age_index=age_labs), ncol=1)+
+    facet_wrap(~age_index, scales='free', labeller =labeller(age_index=age_labs), ncol=2)+
     scale_x_date(name='')+
     scale_y_continuous(name='infections')+
     scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data'))+
