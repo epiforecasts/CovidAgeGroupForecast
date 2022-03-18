@@ -1,8 +1,51 @@
+library(cowplot)
+pandemic_periods = 
+  list(
+    reduced_restrictions, lubridate::ymd('2020-07-30'), 
+    schools_opened = lubridate::ymd('2020-09-04'),
+    Lockdown_2, lubridate::ymd('2020-11-05'),
+    L2_Easing, lubridate::ymd('2020-12-03'),
+    Christmas, lubridate::ymd('2020-12-20'),
+    Lockdown_3, lubridate::ymd('2021-05-01'), 
+    L3_Schools_open, lubridate::ymd('2021-03-09'), 
+    L3_easing, lubridate::ymd('2021-03-29'), 
+    Open, lubridate::ymd('2021-10-01')
+  )
 
-score_forecasts = function(summary_preds) {
+pandemic_periods = data.table(
+  
+  periods = 
+    c('reduced_restrictions', 
+      'schools_opened', 
+      'Lockdown_2', 
+      'L2_Easing', 
+      'Christmas', 
+      'Lockdown_3', 
+      'L3_Schools_open',
+      'L3_easing', 
+      'Open', 
+      'END'), 
+  
+  date_breaks = 
+    c(lubridate::ymd('2020-07-30'), 
+      lubridate::ymd('2020-09-04'),
+      lubridate::ymd('2020-11-05'),
+      lubridate::ymd('2020-12-03'),
+      lubridate::ymd('2020-12-20'),
+      lubridate::ymd('2021-05-01'),
+      lubridate::ymd('2021-03-09'), 
+      lubridate::ymd('2021-03-29'), 
+      lubridate::ymd('2021-10-01'), 
+      lubridate::ymd('2022-01-20'))
+  
+)
+
+
+
+score_forecasts = function(summary_preds, pandemic_periods) {
   
   preds_long = melt(summary_preds[name=='forecast_gens'], 
-                    id.vars = c('date', 'age_group', 'name', 'time_index', 'age_index', 'forecast_date', 'run', 'value'), 
+                    id.vars = c('date', 'age_group', 'name', 'age_index', 'time_index', 'age_index', 'forecast_date', 'run', 'value'), 
                     measure.vars = c('5%',  '10%', '25%',     '50%',   '75%', '90%',     '95%'), value.name = 'prediction', variable.name = 'quantile_chr')
   preds_long[, quantile := as.numeric(sub("%", "", quantile_chr, fixed=TRUE))/100]
   preds_long[, true_value := value]
@@ -11,87 +54,118 @@ score_forecasts = function(summary_preds) {
   preds_long[, horizon := as.numeric(date - forecast_date)]
   preds_long[, model := run]
   
-  preds_to_score = preds_long[,c('value_date', 'value_type', 'age_group', 'true_value', 'model', 'quantile', 'prediction', 'horizon')]
+  preds_to_score = preds_long[,c('value_date', 'value_type', 'age_index', 'age_group', 'true_value', 'model', 'quantile', 'prediction', 'horizon')]
+  
+  preds_to_score[, periods:=cut(preds_to_score$value_date,
+                                breaks = pandemic_periods$date_breaks, 
+                                labels = head(pandemic_periods$periods,-1))]
+  
+  score_by_age = scoringutils::eval_forecasts(preds_to_score, 
+                                              summarise_by = c("model", "age_index", "periods"))
+  
+  score_by_fd = scoringutils::eval_forecasts(preds_to_score, 
+                                             summarise_by = c("model", "value_date"))
+  
+  score_by_fd_long = melt(score_by_fd, id.vars = c('model', 'value_date'), measure.vars = c('interval_score', 'bias', 'aem'), value.name = 'score', variable.name = 'score_type')
+  score_by_age_long = melt(score_by_age, id.vars = c('model', 'age_index', 'periods'), measure.vars = c('interval_score', 'bias', 'aem'), value.name = 'score', variable.name = 'score_type')
+  
+  
+  p1 =
+    ggplot(score_by_fd_long) + 
+    geom_point(aes(x=value_date, y=score, color=model))+
+    geom_line(aes(x=value_date, y=score, color=model), linetype='dashed')+
+    facet_wrap(~score_type, ncol=1, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score', 'bias', 'aem'))))+
+    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'Baseline - linear extrapolation', 'Baseline - last generation value'))+
+    scale_x_date(name='')+
+    theme_minimal_hgrid()
+  
+  ggsave('plots/scores_forecast_date.pdf', plot=p1, height=10, width=15)
   
   
   
   
-  
-  scores_for_table <- scoringutils::eval_forecasts(preds_to_score, 
-                                         summarise_by = c("model"))
-  scoringutils::score_table(scores_for_table)
-  
-  
-  scores_coverage <- scoringutils::eval_forecasts(preds_to_score, 
-                                         summarise_by = c("model", "range", "quantile"))
-  scoringutils::interval_coverage(scores_coverage) + 
-    ggplot2::ggtitle("Interval Coverage")
-  
-  scoringutils::quantile_coverage(scores_coverage) + 
-    ggplot2::ggtitle("Quantile Coverage")
-  
-  
-  scores_wis <- scoringutils::eval_forecasts(preds_to_score, 
-                                         summarise_by = c("model", "range", "age_group"))
-  scoringutils::wis_components(scores_wis, facet_formula = ~ age_group)
-  scoringutils::range_plot(scores_wis, y = "interval_score", 
-                           facet_formula = ~ age_group)
-  
-  
-  scores_by_horizon <- scoringutils::eval_forecasts(preds_to_score, 
-                                         summarise_by = c("model", "horizon"))
-  scores <- scores[, horizon := as.factor(horizon)]
-  scoringutils::score_heatmap(scores_by_horizon, 
-                              x = "horizon", metric = "interval_score")
-  
-  
-  
-}
-
-interval_scores = data.table()
-for(cast in unique(preds_to_score$model)){
-  
-  
-  true_values <- unique(preds_to_score[value_type=='forecast_gens' & model=='1', c('value_date','true_value')])$true_value
-  dates =  unique(preds_to_score[value_type=='forecast_gens' & model==cast, c('value_date','true_value')])$value_date
-  interval_range = 90
-  lower = preds_to_score[value_type=='forecast_gens' & model==cast & quantile==0.1,]$prediction
-  upper = preds_to_score[value_type=='forecast_gens' & model==cast & quantile==0.9,]$prediction
-  
-  
-  interval_scores = rbind(
-    interval_scores, 
-    data.table(
-      date = dates,
-      score =   scoringutils::interval_score(true_values = true_values,
-                                             lower = lower,
-                                             upper = upper,
-                                             interval_range = interval_range), 
-      model = cast
-      
+  p2 = 
+    ggplot(score_by_age_long) + 
+    geom_point(aes(x=age_index, y=score, color=model))+
+    geom_line(aes(x=age_index, y=score, color=model), linetype='dashed')+
+    facet_grid(score_type~periods, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score', 'bias', 'aem'))))+
+    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'Baseline - linear extrapolation', 'Baseline - last generation value'))+
+    scale_x_continuous(name='age group', breaks = 1:7, labels = age_groups, )+
+    theme_minimal_hgrid()+
+    theme(
+      axis.text.x=element_text(angle=90)
     )
-    
-  )
-
-
+  
+  ggsave('plots/scores_age_period.pdf', plot=p2, height=7, width=22)
   
   
+  
+  score_by_age_rel = merge(score_by_age, score_by_age[model=='baseline_last_diff', ], by = c('age_index','periods'), suffixes = c('', '_baseline'))
+  score_by_age_rel[,
+                   c(
+                     'interval_score_rel',
+                     'bias_rel', 
+                     'aem_rel'
+                   ) 
+                   :=
+                     list(
+                       interval_score/interval_score_baseline,
+                       bias/bias_baseline,
+                       aem/aem_baseline
+                     )
+  ]
+  
+  score_by_fd_rel = merge(score_by_fd, score_by_fd[model=='baseline_last_diff', ], by = c('value_date'), suffixes = c('', '_baseline'))
+  score_by_fd_rel[,
+                   c(
+                     'interval_score_rel',
+                     'bias_rel', 
+                     'aem_rel'
+                   ) 
+                   :=
+                     list(
+                       interval_score/interval_score_baseline,
+                       bias/bias_baseline,
+                       aem/aem_baseline
+                     )
+  ]
+  
+  
+  score_by_fd_long_rel = melt(score_by_fd_rel, id.vars = c('model', 'value_date'), measure.vars = c('interval_score_rel', 'bias_rel', 'aem_rel'), value.name = 'score', variable.name = 'score_type')
+  score_by_age_long_rel = melt(score_by_age_rel, id.vars = c('model', 'age_index', 'periods'), measure.vars = c('interval_score_rel', 'bias_rel', 'aem_rel'), value.name = 'score', variable.name = 'score_type')
+  
+  
+  p1 =
+    ggplot(score_by_fd_long_rel) + 
+    geom_point(aes(x=value_date, y=score, color=model))+
+    geom_line(aes(x=value_date, y=score, color=model), linetype='dashed')+
+    facet_wrap(~score_type, ncol=1, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score_rel', 'bias_rel', 'aem_rel'))))+
+    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'Baseline - linear extrapolation', 'Baseline - last generation value'))+
+    scale_x_date(name='')+
+    theme_minimal_hgrid()
+  
+  ggsave('plots/scores_forecast_date_relative.pdf', plot=p1, height=10, width=15)
+  
+  
+  
+  
+  p2 = 
+    ggplot(score_by_age_long_rel) + 
+    geom_point(aes(x=age_index, y=score, color=model))+
+    geom_line(aes(x=age_index, y=score, color=model), linetype='dashed')+
+    facet_grid(score_type~periods, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score_rel', 'bias_rel', 'aem_rel'))))+
+    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'Baseline - linear extrapolation', 'Baseline - last generation value'))+
+    scale_x_continuous(name='age group', breaks = 1:7, labels = age_groups, )+
+    theme_minimal_hgrid()+
+    theme(
+      axis.text.x=element_text(angle=90)
+    )
+  
+  ggsave('plots/scores_age_period_relative.pdf', plot=p2, height=7, width=22)
+  
+  
+
 }
 
 
-interval_scores
-
-
-true_values <- 
-interval_range <- 90
-alpha <- (100 - interval_range) / 100
-lower <- qnorm(alpha/2, rnorm(30, mean = 1:30))
-upper <- qnorm((1- alpha/2), rnorm(30, mean = 1:30))
-
-interval_score(true_values = true_values,
-               lower = lower,
-               upper = upper,
-               interval_range = interval_range)
-
-
-
+score_forecasts(summary_preds[date<lubridate::ymd(20211201)], pandemic_periods)

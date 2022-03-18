@@ -4,6 +4,7 @@
 same_as_last_gen = function(inf_ests, summary_preds, generation_time=5){
   
   inf_ests[, date:=lubridate::ymd(date)]
+  inf_ests_unshifted = copy(inf_ests)
   inf_ests[, date := date + 5]
   baseline_last_gen = unique(summary_preds[name=='forecast_gens',c('date', 'age_group', 'time_index', 'age_index', 'forecast_date')])
   baseline_last_gen[, name:= 'forecast_gens']
@@ -12,9 +13,10 @@ same_as_last_gen = function(inf_ests, summary_preds, generation_time=5){
   inf_est_thinned = inf_ests[,c('date', 'variable', 'q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95')] %>% rename(age_group = variable)
 
   baseline_last_gen = merge(baseline_last_gen, inf_est_thinned, by=c('date', 'age_group'), all.x = TRUE)
+  baseline_last_gen = merge(baseline_last_gen, summary_preds[run=='1' & name=='forecast_gens', c('date', 'age_group', 'variable', 'value')], by=c('date', 'age_group'), all.x = TRUE)
   
-  baseline_last_gen = baseline_last_gen[, c('date', 'age_group', 'name', 'q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95', 'time_index', 'age_index', 'forecast_date', 'run')]
-  colnames(baseline_last_gen) = c('date', 'age_group', 'name', '5%', '10%', '25%', '50%', '75%', '90%', '95%', 'time_index', 'age_index', 'forecast_date', 'run')
+  baseline_last_gen = baseline_last_gen[, c('date', 'age_group', 'name', 'q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95', 'time_index', 'age_index', 'forecast_date', 'run', 'variable', 'value')]
+  colnames(baseline_last_gen) = c('date', 'age_group', 'name', '5%', '10%', '25%', '50%', '75%', '90%', '95%', 'time_index', 'age_index', 'forecast_date', 'run', 'variable', 'value')
  
   baseline_last_gen
   
@@ -38,9 +40,11 @@ same_diff_as_last_gen = function(inf_ests, summary_preds, generation_time=5){
   }
   
   baseline_last_diff = merge(baseline_last_diff, last_diff_all_groups, by=c('date', 'age_group'), all.x = TRUE)
+  baseline_last_diff = merge(baseline_last_diff, summary_preds[run=='1' & name=='forecast_gens', c('date', 'age_group', 'variable', 'value')], by=c('date', 'age_group'), all.x = TRUE)
   
-  baseline_last_diff = baseline_last_diff[, c('date', 'age_group', 'name', 'q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95', 'time_index', 'age_index', 'forecast_date', 'run')]
-  colnames(baseline_last_diff) = c('date', 'age_group', 'name', '5%', '10%', '25%', '50%', '75%', '90%', '95%', 'time_index', 'age_index', 'forecast_date', 'run')
+  
+  baseline_last_diff = baseline_last_diff[, c('date', 'age_group', 'name', 'q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95', 'time_index', 'age_index', 'forecast_date', 'run', 'variable', 'value')]
+  colnames(baseline_last_diff) = c('date', 'age_group', 'name', '5%', '10%', '25%', '50%', '75%', '90%', '95%', 'time_index', 'age_index', 'forecast_date', 'run', 'variable', 'value')
   
   baseline_last_diff
   
@@ -54,5 +58,11 @@ get_baselines = function(inf_ests, summary_preds, generation_time=5){
   baselines = rbind(last_gen_baseline, last_diff_baseline)
   
   baselines
+}
+
+last_diff = function(values){
+  
+  (tail(values$q50,-5) - head(values$q50,-5)) + tail(values, -5)
+  
 }
 

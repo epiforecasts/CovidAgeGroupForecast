@@ -13,7 +13,8 @@ source('R/plotting.R')
 
 
 # load samples of infections and abprev from inc2prev
-samples = readRDS('../../../inc2prev/outputs/samples_combined_age_ab_A.rds')
+#samples = readRDS('../../../inc2prev/outputs/samples_combined_age_ab_A.rds')
+samples = readRDS('../samples_age_ab.rds')
 samples = data.table(samples)
 
 estimates_ = readRDS('../../../inc2prev/outputs/estimates_combined_age_ab_A.rds')
@@ -25,7 +26,6 @@ inf_estimates[, date := as.Date(date)]
 inf_estimates_mu = ab_estimates[, c('mean', 'variable', 'date')]
 
 ggplot(inf_estimates) + 
-  geom_line(aes(x=date, y=median))+
   geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
   facet_wrap(~variable)
 
@@ -140,8 +140,8 @@ summary_preds = merge(summary_preds, actualest_inc_long, by.x = c('date', 'age_g
 
 
 baselines = get_baselines(inf_estimates, summary_preds)
-baselines[, variable := age_group]
-baselines [, value := NA]
+#baselines[, variable := age_group]
+#baselines [, value := NA]
 summary_preds = rbind(summary_preds, baselines)
 
 
