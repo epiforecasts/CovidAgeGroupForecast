@@ -35,7 +35,7 @@ same_diff_as_last_gen = function(inf_ests, summary_preds, generation_time=5){
     values_only_group  = inf_ests[variable==group,c('q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95')]
     last_diff_group = last_diff(values_only_group)
     last_diff_group[, age_group := group] 
-    last_diff_group[, date := tail(inf_ests[variable==group]$date,-5)]
+    last_diff_group[, date := head(inf_ests[variable==group]$date,-5)]
     last_diff_all_groups = rbind(last_diff_all_groups, last_diff_group)
   }
   

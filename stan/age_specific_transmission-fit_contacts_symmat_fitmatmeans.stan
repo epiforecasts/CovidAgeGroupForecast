@@ -184,6 +184,15 @@ generated quantities{
     
   }
   
+ //   // second generation forecast
+ // for(f in 1:5){
+ //   
+ //     full_susceptibility[T-(6-f)] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[T-(6-f)])*ab_protection ));
+ //   
+ //     forecast_gens[f+5] = (diag_matrix(full_susceptibility[T-(6-f)]) * contact_matrices_aug[day_to_week_converter[T-(6-f)]] * diag_matrix(to_vector(inf_rate)))  * (diag_matrix(full_susceptibility[T-(6-f)]) * (contact_matrices_aug[day_to_week_converter[T-(6-f)]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[T-(6-f)]));
+ //   
+ // }
+ // 
 
   
 }

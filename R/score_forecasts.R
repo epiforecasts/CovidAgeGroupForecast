@@ -15,15 +15,15 @@ pandemic_periods =
 pandemic_periods = data.table(
   
   periods = 
-    c('reduced_restrictions', 
-      'schools_opened', 
-      'Lockdown_2', 
-      'L2_Easing', 
+    c('Light \nRestrictions', 
+      'Schools \nre-opened', 
+      'Lockdown 2', 
+      'Lockdown 2 \neasing', 
       'Christmas', 
-      'Lockdown_3', 
-      'L3_Schools_open',
-      'L3_easing', 
-      'Open', 
+      'Lockdown 3', 
+      'Lockdown 3 \nSchools Open',
+      'Lockdown 3 \neasing', 
+      'Opening Up', 
       'END'), 
   
   date_breaks = 
@@ -80,6 +80,8 @@ score_forecasts = function(summary_preds, pandemic_periods) {
     theme_minimal_hgrid()
   
   ggsave('plots/scores_forecast_date.pdf', plot=p1, height=10, width=15)
+  ggsave('plots/scores_forecast_date.png', plot=p1, height=10, width=15, units = 'in', dpi=300)
+  
   
   
   
@@ -97,6 +99,7 @@ score_forecasts = function(summary_preds, pandemic_periods) {
     )
   
   ggsave('plots/scores_age_period.pdf', plot=p2, height=7, width=22)
+  ggsave('plots/scores_age_period.png', plot=p2, height=7, width=22, units = 'in', dpi=300)
   
   
   
@@ -131,41 +134,73 @@ score_forecasts = function(summary_preds, pandemic_periods) {
   ]
   
   
-  score_by_fd_long_rel = melt(score_by_fd_rel, id.vars = c('model', 'value_date'), measure.vars = c('interval_score_rel', 'bias_rel', 'aem_rel'), value.name = 'score', variable.name = 'score_type')
-  score_by_age_long_rel = melt(score_by_age_rel, id.vars = c('model', 'age_index', 'periods'), measure.vars = c('interval_score_rel', 'bias_rel', 'aem_rel'), value.name = 'score', variable.name = 'score_type')
+  score_by_fd_long_rel = melt(score_by_fd_rel, id.vars = c('model', 'value_date'), measure.vars = c('interval_score_rel', 'aem_rel', 'bias'), value.name = 'score', variable.name = 'score_type')
+  score_by_age_long_rel = melt(score_by_age_rel, id.vars = c('model', 'age_index', 'periods'), measure.vars = c('bias', 'aem_rel', 'interval_score_rel' ), value.name = 'score', variable.name = 'score_type')
   
   
   p1 =
     ggplot(score_by_fd_long_rel) + 
     geom_point(aes(x=value_date, y=score, color=model))+
     geom_line(aes(x=value_date, y=score, color=model), linetype='dashed')+
-    facet_wrap(~score_type, ncol=1, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score_rel', 'bias_rel', 'aem_rel'))))+
-    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'Baseline - linear extrapolation', 'Baseline - last generation value'))+
+    facet_wrap(~score_type, ncol=1, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score', "Absolute error of the mean",  'Bias'),c('interval_score_rel', 'aem_rel', 'bias'))))+
+    scale_color_discrete(name='', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'Baseline - linear extrapolation', 'Baseline - last generation value'))+
     scale_x_date(name='')+
-    theme_minimal_hgrid()
+    theme_minimal_hgrid()+
+    theme(legend.position = 'bottom')
   
-  ggsave('plots/scores_forecast_date_relative.pdf', plot=p1, height=10, width=15)
+  
+  ggsave('plots/scores_forecast_date_relative.pdf', plot=p1, height=7, width=10)
+  ggsave('plots/scores_forecast_date_relative.png', plot=p1, height=7, width=10, units = 'in', dpi=300) 
   
   
   
   
   p2 = 
     ggplot(score_by_age_long_rel) + 
-    geom_point(aes(x=age_index, y=score, color=model))+
-    geom_line(aes(x=age_index, y=score, color=model), linetype='dashed')+
-    facet_grid(score_type~periods, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score_rel', 'bias_rel', 'aem_rel'))))+
-    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'Baseline - linear extrapolation', 'Baseline - last generation value'))+
-    scale_x_continuous(name='age group', breaks = 1:7, labels = age_groups, )+
-    theme_minimal_hgrid()+
+    geom_point(aes(y=age_index, x=score, color=model))+
+    geom_path(aes(y=age_index, x=score, color=model), linetype='dashed')+
+    facet_grid(periods~score_type, scale='free_x', labeller = labeller(score_type=setNames(c('Interval Score', "Absolute error \nof the mean",  'Bias'),c('interval_score_rel',  'aem_rel', 'bias'))))+
+    scale_color_discrete(name='', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data', 'Baseline - linear extrapolation', 'Baseline - last generation value'))+
+    scale_y_continuous(name='age group', breaks = 1:7, labels = age_groups, trans='reverse')+
+    theme_minimal_vgrid()+
     theme(
-      axis.text.x=element_text(angle=90)
+      legend.position = 'bottom'
     )
   
-  ggsave('plots/scores_age_period_relative.pdf', plot=p2, height=7, width=22)
+  ggsave('plots/scores_age_period_relative.pdf', plot=p2, height=15, width=10)
+  ggsave('plots/scores_age_period_relative.png', plot=p2, height=15, width=10, units = 'in', dpi=300) 
   
+  
+  
+  score_by_period = scoringutils::eval_forecasts(preds_to_score, 
+                                              summarise_by = c("model", "periods"))
+  
+  score_overall = scoringutils::eval_forecasts(preds_to_score, 
+                                             summarise_by = c("model"))
+  
+  score_age = scoringutils::eval_forecasts(preds_to_score, 
+                                               summarise_by = c("model", 'age_group'))
+  
+  write.csv(score_by_period, 'outputs/score_by_period.csv')
+  write.csv(score_overall, 'outputs/score_overall.csv')
+  
+  list(score_overall=score_overall, score_by_period=score_by_period, score_by_age=score_age)
   
 
 }
 
 
-score_forecasts(summary_preds[date<lubridate::ymd(20211201)], pandemic_periods)
+summary_scores = score_forecasts(summary_preds[date<lubridate::ymd(20211201)], pandemic_periods)
+
+
+st1 = melt(summary_scores[[2]], id.vars = c('model', 'periods'), measure.vars = c('interval_score', 'aem', 'bias'), variable.name = 'score_type', value.name = 'score')
+overall_table = dcast(st1, formula = periods + score_type ~ model, value.var = 'score')
+
+st2 = melt(summary_scores[[3]], id.vars = c('model', 'age_group'), measure.vars = c('interval_score', 'aem', 'bias'), variable.name = 'score_type', value.name = 'score')
+age_table = dcast(st2, formula = age_group + score_type ~ model, value.var = 'score')
+
+
+
+
+write.csv(overall_table, file = 'outputs/overall_results.csv')
+write.csv(age_table, file = 'outputs/age_results.csv')

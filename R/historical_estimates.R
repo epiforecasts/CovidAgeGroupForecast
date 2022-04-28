@@ -10,6 +10,12 @@ library(cmdstanr)
 
 source('R/fit_model.R')
 source('R/plotting.R')
+library(patchwork)
+age_groups =  c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )
+age_lookup = setNames(object=1:7, nm = age_groups)
+
+age_labs = age_groups
+names(age_labs) = 1:7
 
 
 # load samples of infections and abprev from inc2prev
@@ -21,30 +27,77 @@ estimates_ = readRDS('../../../inc2prev/outputs/estimates_combined_age_ab_A.rds'
 ab_samples = data.table(samples)[name == 'dab']
 estimates = read.csv(file = '../estimates_age_ab.csv')
 
+population = data.table(unique(estimates[,c('variable', 'population')]))
+population = population[order(match(unique(variable), c("2-10", "11-15", "16-24", "25-34", "35-49", "50-69", "70+"))),]
+population[, props := population/sum(population)]
+estimates = data.table(estimates)
+estimates[, age_group_no := age_lookup[variable]]
+
 inf_estimates = data.table(estimates)[name == 'infections']
 inf_estimates[, date := as.Date(date)]
-inf_estimates_mu = ab_estimates[, c('mean', 'variable', 'date')]
+inf_estimates_mu = inf_estimates[, c('mean', 'variable', 'date')]
 
-ggplot(inf_estimates) + 
+inf_estimates[, mean_no := mean * population]
+inf_estimates[, sd_no := sd * population]
+
+
+inf_traj = ggplot(inf_estimates) + 
   geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
-  facet_wrap(~variable)
+  geom_point(aes(x=date, y=mean_no), size=0.3, stroke=0, color='red')+
+  facet_wrap(~age_group_no, nrow=1, labeller= labeller(age_group_no = age_labs))+
+  scale_y_continuous(name='Infections')+
+  scale_x_date(breaks = c(), name='')+
+  theme_minimal_hgrid()+
+  ggtitle('A')
 
-inf_matrix_mean  = dcast(inf_estimates, value.var = 'mean', date ~ variable)
-inf_matrix_sd = dcast(inf_estimates, value.var = 'sd', date ~ variable)
+inf_matrix_mean  = dcast(inf_estimates, value.var = 'mean_no', date ~ variable)
+inf_matrix_sd = dcast(inf_estimates, value.var = 'sd_no', date ~ variable)
 
 
 ab_estimates = data.table(estimates)[name == 'gen_dab']
-ab_estimates[, date := as.Date(date)]
-ab_estimates_mu = ab_estimates[, c('mean', 'variable', 'date')]
+
+ab_estimates[, date := min(inf_estimates$date) + (t_index-1)]
+
+ab_estimates[, mean_no := mean * population]
+ab_estimates[, sd_no := sd * population]
+
+ab_estimates_mu = ab_estimates[, c('mean_no', 'variable', 'date')]
 
 anb_matrix_mean  = dcast(ab_estimates, value.var = 'mean', date ~ variable)
 anb_matrix_sd = dcast(ab_estimates, value.var = 'sd', date ~ variable)
 
 
+
+anb_traj = ggplot(ab_estimates) + 
+  geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
+  geom_point(aes(x=date, y=mean), size=0.3, stroke=0, color='DodgerBlue')+
+  facet_wrap(~age_group_no, nrow=1, labeller= labeller(age_group_no = age_labs))+
+  scale_y_continuous(name='Proportion with antibodies')+
+  scale_x_date(date_labels = '%b-%y')+
+  theme_minimal_hgrid()+
+  theme(axis.text.x = element_text(angle = 45))+
+  ggtitle('B')
+
+input_plot = inf_traj/anb_traj
+
+ggsave('plots/inputs.pdf', input_plot, width=10, height=5)
+ggsave('plots/inputs.png', input_plot, width=10, height=5, units = 'in', dpi=300)
+
 # load mean contact matrices from contactmatrixcode
 cms = readRDS('cms.rds')
 sr_dates = readRDS('sr_dates.rds')
 population = readRDS('population.rds')
+
+ggplot(sr_dates) + 
+  geom_rect(aes(xmin=min_date, xmax=max_date, ymax=survey_round+0.4, ymin=survey_round-0.4, fill=survey_round))+
+  scale_fill_viridis()+
+  scale_y_continuous(trans='reverse', name='Survey Round')+
+  theme_minimal_vgrid()+
+  theme(legend.position = 'none')
+
+ggsave('plots/survey_rounds.png', width=10, height=3)
+
+
 
 # create matrices of mean and standard deviations for infections and ab_prevalence
 #inf_matrix_mean = dcast(samples[name=='infections', c('sample', 'variable', 'value', 'date')], 
@@ -75,13 +128,13 @@ setcolorder(anb_matrix_sd, colorder)
 
 
 
-inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
-  data.table(t(t(inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 
-                 tail(population$pop_total,-1)))
-
-inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
-  data.table(t(t(inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 
-                 tail(population$pop_total,-1)))
+#inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
+#  data.table(t(t(inf_matrix_mean[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 
+#                 population$population))
+#
+#inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )] = 
+#  data.table(t(t(inf_matrix_sd[, c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )]) * 
+#                 population$population))
 
 
 
@@ -94,7 +147,9 @@ ggplot(actualest_inc_long)+
 
 age_mods = list(cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmatmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitnothing.stan'))
 
-dates = tail(sr_dates$min_date, -5)
+dates = sort(head(tail(sr_dates$min_date, -5), -10))
+
+#dates = sapply(dates, lubridate::ymd)
 
 
 
@@ -113,12 +168,14 @@ for(r in 1:4){
     anb_matrix_sd = anb_matrix_sd, 
     cms = cms, 
     runindex = r, 
-    quantiles=c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95)
+    quantiles=c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), 
+    future.seed=TRUE
   )
   
   all_est = append(all_est, est)
   
 }
+
 
 
 summary_pars = data.table()
@@ -157,11 +214,19 @@ saveRDS(summary_conts, 'outputs/summary_conts.rds')
 d = lapply(dates, lubridate::ymd)
 unlist(d)
 
+d = d[10:15]
+
+
+sort(dates)
+
 plot_parameters(summary_pars, d)
 
 
-age_labs = age_groups
-names(age_labs) = 1:7
 
 
-plot_trajectories_one_ax(summary_preds, head(d,-25))
+
+plot_trajectories_one_ax(summary_preds, d)
+
+ggsave("plots/trajectories_zoomed.pdf", width = 10, height=7)
+ggsave("plots/trajectories_zoomed.png", width = 10, height=7,  units = 'in', dpi = 300 )
+
