@@ -7,6 +7,7 @@ library(future.callr)
 library(future)
 
 library(cmdstanr)
+library(cowplot)
 
 source('R/fit_model.R')
 source('R/plotting.R')
@@ -20,11 +21,11 @@ names(age_labs) = 1:7
 
 # load samples of infections and abprev from inc2prev
 #samples = readRDS('../../../inc2prev/outputs/samples_combined_age_ab_A.rds')
-samples = readRDS('../samples_age_ab.rds')
-samples = data.table(samples)
+#samples = readRDS('../samples_age_ab.rds')
+#samples = data.table(samples)
 
-estimates_ = readRDS('../../../inc2prev/outputs/estimates_combined_age_ab_A.rds')
-ab_samples = data.table(samples)[name == 'dab']
+#estimates_ = readRDS('../../../inc2prev/outputs/estimates_combined_age_ab_A.rds')
+#ab_samples = data.table(samples)[name == 'dab']
 estimates = read.csv(file = '../estimates_age_ab.csv')
 
 population = data.table(unique(estimates[,c('variable', 'population')]))
@@ -154,6 +155,7 @@ dates = sort(head(tail(sr_dates$min_date, -5), -10))
 
 
 period = 30 
+smax = 20 
 
 plan(callr, workers = future::availableCores())
 all_est = list()
@@ -161,7 +163,7 @@ for(r in 1:4){
   est <- future_lapply(
     dates, fit_NGM_model_for_date_range,
     age_mod = age_mods[[r]],
-    period = period, 
+    period = period+smax, 
     inf_matrix_mean = inf_matrix_mean, 
     inf_matrix_sd = inf_matrix_sd, 
     anb_matrix_mean = anb_matrix_mean, 

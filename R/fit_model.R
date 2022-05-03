@@ -45,6 +45,9 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
   
   mean_contacts_mu_mat = sapply(mean_contacts_mu, mean)
   mean_contacts_sd_mat = sapply(mean_contacts_sd, mean)
+  smax = 20
+  weights = dgamma(1:20, 10, 2 )  
+  
   # set up data input for stan 
   data = list( 
     T = dim(inf_matrix_mean[,-c('date', 'sr')])[1],
@@ -62,13 +65,15 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
     mean_contacts_mu = mean_contacts_mu,
     mean_contacts_sd = mean_contacts_sd, 
     mean_contacts_mu_mat = mean_contacts_mu_mat,
-    mean_contacts_sd_mat = mean_contacts_sd_mat
+    mean_contacts_sd_mat = mean_contacts_sd_mat, 
+    smax=smax, 
+    w_g = weights
   )
   # compile stan model from 'stan/age_specific_transmission.stan'
   
   fit = age_mod$sample(data, 
-                       iter_warmup = 250,
-                       iter_sampling=250, 
+                       iter_warmup = 20,
+                       iter_sampling=20, 
                        chains=1, 
                        max_treedepth = 12, 
                        adapt_delta=0.8, 

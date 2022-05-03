@@ -13,6 +13,9 @@ data {
   real population[A];
   
   int day_to_week_converter[T];      // id vector to determine which cm to use for each day
+  
+  int<lower=0> smax;
+  real<lower=0> w_g[smax]; 
 }
 
 transformed data{
@@ -76,6 +79,7 @@ model {
   vector[A] full_susceptibility;                // container for ab and inherent susceptibiluty
   matrix[A,A] transmissibility_correction;      // container for conversion of CM to NGM
   vector[A] next_gen[T];
+  matrix[smax,A] next_gen_smax[T]; 
 
 
   //inf_rate ~ beta(5.0, 1.0);       // age specific rate of infection on contact
@@ -117,7 +121,7 @@ model {
   
 
   
-  for(t in 1:(T-5)){
+  for(t in 21:T){
     // combine inherent and ab susceptibility
     full_susceptibility = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection));
     
@@ -125,12 +129,17 @@ model {
     transmissibility_correction = full_susceptibility * to_row_vector(inf_rate);
     
     // estimate next generation of infections
-    next_gen[t] = (diag_matrix(full_susceptibility) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t]);
+    for(s in 1:smax){
+          next_gen_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility) * contact_matrices_aug[day_to_week_converter[t-smax + s]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-smax + s]));
+    }
+    
+    next_gen[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gen_smax[t])) ;
+    // next_gen[t] = (diag_matrix(full_susceptibility) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t]);
     
     // fit model 
     for(a in 1:A){
       //infections_fixed[t+3, a] ~ normal(next_gen[a], inf_sd[t,a]);
-      next_gen[t][a] ~ normal(inf_mu[t+5,a], inf_sd[t+5, a]);
+      next_gen[t][a] ~ normal(inf_mu[t,a], inf_sd[t, a]);
     }
     
   }
