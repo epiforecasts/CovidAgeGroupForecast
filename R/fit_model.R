@@ -46,7 +46,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
   mean_contacts_mu_mat = sapply(mean_contacts_mu, mean)
   mean_contacts_sd_mat = sapply(mean_contacts_sd, mean)
   smax = 20
-  weights = dgamma(1:20, 10, 2 )  
+  weights = dgamma(1:20, 10, 1.7 )
+  weights = weights/sum(weights)
   
   # set up data input for stan 
   data = list( 
