@@ -2,7 +2,7 @@
 
 
 
-fit_NGM_model_for_date_range = function(end_date='20201201', 
+fit_NGM_model_for_date_range = function(end_date='20211001', 
                                         period=30, 
                                         age_mod = age_mods[[1]],
                                         inf_matrix_mean, 
@@ -67,13 +67,14 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
     mean_contacts_mu_mat = mean_contacts_mu_mat,
     mean_contacts_sd_mat = mean_contacts_sd_mat, 
     smax=smax, 
-    w_g = weights
+    w_g = weights, 
+    horizon=10
   )
   # compile stan model from 'stan/age_specific_transmission.stan'
   
   fit = age_mod$sample(data, 
-                       iter_warmup = 20,
-                       iter_sampling=20, 
+                       iter_warmup = 250,
+                       iter_sampling=250, 
                        chains=1, 
                        max_treedepth = 12, 
                        adapt_delta=0.8, 
