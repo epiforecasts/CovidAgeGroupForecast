@@ -1,5 +1,5 @@
 fit = fit_NGM_model_for_date_range(
-  end_date = '20211001',
+  end_date = '20201001',
   age_mod = age_mods[[1]],
   period = period+smax, 
   inf_matrix_mean = inf_matrix_mean, 
