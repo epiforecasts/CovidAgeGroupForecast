@@ -143,8 +143,8 @@ model {
 
 generated quantities{
   vector[A] full_susceptibility[T];                // container for ab and inherent susceptibiluty
-  //vector[A] next_gens[T];
-  //matrix[smax,A] next_gens_smax[T];
+  vector[A] next_gens[T];
+  matrix[smax,A] next_gens_smax[T];
   vector[A] forecast_gens[T + horizon]; 
   matrix[smax,A] forecast_gens_smax[T + horizon]; 
 
@@ -159,27 +159,27 @@ generated quantities{
   
   
   
-//  for(t in 1:T){
-//    // combine inherent and ab susceptibility
-//    full_susceptibility[t] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection ));
-//    
-//    // construct matrix to correct contact matrix to NGM
-//    if(t>20){
-//    
-//    for(s in 1:smax){
-//        next_gens_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility[t]) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-s]));
-//    }
-//    
-//    next_gens[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gens_smax[t])) ;
-//      
-//}
-//
-//  }
+  for(t in 1:T){
+    // combine inherent and ab susceptibility
+    full_susceptibility[t] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection ));
+    
+    // construct matrix to correct contact matrix to NGM
+    if(t>20){
+    
+    for(s in 1:smax){
+        next_gens_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility[t]) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-s]));
+    }
+    
+    next_gens[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gens_smax[t])) ;
+      
+}
+
+  }
   
   // forecast cases
   for(f in 1:horizon){
     
-      full_susceptibility[T+f] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[T])*ab_protection ));
+      //full_susceptibility[T+f] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[T])*ab_protection ));
       for(s in 1:smax){
         forecast_gens_smax[T+f][s] = to_row_vector(w_g[s] * diag_matrix(full_susceptibility[T]) * contact_matrices_aug[day_to_week_converter[T]] * diag_matrix(to_vector(inf_rate))  * to_vector(forecast_gens[T+f-s]));
       }
