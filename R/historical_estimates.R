@@ -146,7 +146,7 @@ ggplot(actualest_inc_long)+
   geom_point(aes(x=date, y = value, color=variable))
 
 
-age_mods = list(cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmatmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitnothing.stan'))
+age_mods = list(cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_matouts.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmatmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitnothing.stan'))
 
 dates = sort(head(tail(sr_dates$min_date, -5), -10))
 
