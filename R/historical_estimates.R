@@ -194,14 +194,14 @@ saveRDS(summary_conts, 'outputs/summary_conts.rds')
 # vector of dates 
 d = lapply(dates, lubridate::ymd)
 unlist(d)
-# take subset to plot
+# take subset to plot
 d = d[10:15]
 sort(dates)
 
 # plot parameters
 plot_parameters(summary_pars, d)
 
-# plot forecasts on one axis
+# plot forecasts on one axis
 plot_trajectories_one_ax(summary_preds, d)
 
 # save forecast plot

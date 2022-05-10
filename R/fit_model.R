@@ -4,6 +4,7 @@
 
 fit_NGM_model_for_date_range = function(end_date='20211001', 
                                         period=30, 
+                                        smax = 20,
                                         age_mod = age_mod,
                                         inf_matrix_mean, 
                                         inf_matrix_sd, 
