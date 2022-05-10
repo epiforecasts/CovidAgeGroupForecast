@@ -50,6 +50,29 @@ same_diff_as_last_gen = function(inf_ests, summary_preds, generation_time=5){
   
 }
 
+same_as_last_value = function(inf_ests, summary_preds){
+  
+  
+  
+  bl_values = inf_ests[date %in% unique(summary_preds$forecast_date), c('date', 'variable', 'q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95')] %>% rename(age_group = variable, forecast_date=date)
+  bl_values[, forecast_date:=lubridate::ymd(forecast_date)]
+  baseline_last_gen = unique(summary_preds[name=='forecast_gens',c('date', 'age_group', 'time_index', 'age_index', 'forecast_date')])
+  baseline_last_gen[, name:= 'forecast_gens']
+  baseline_last_gen[, run := 'baseline_last_val']
+  
+  baseline_last_gen = merge(baseline_last_gen, bl_values, by=c('forecast_date', 'age_group'), all.x = TRUE)
+  baseline_last_gen = merge(baseline_last_gen, summary_preds[run=='1' & name=='forecast_gens' & time_index > 49, c('date', 'age_group', 'variable', 'value')], by=c('date', 'age_group'), all.x = TRUE)
+  
+  baseline_last_gen = baseline_last_gen[, c('date', 'age_group', 'name', 'q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95', 'time_index', 'age_index', 'forecast_date', 'run', 'variable', 'value')]
+  colnames(baseline_last_gen) = c('date', 'age_group', 'name', '5%', '10%', '25%', '50%', '75%', '90%', '95%', 'time_index', 'age_index', 'forecast_date', 'run', 'variable', 'value')
+  
+  unique(baseline_last_gen)
+  
+}
+
+
+
+
 get_baselines = function(inf_ests, summary_preds, generation_time=5){
   
   last_gen_baseline = same_as_last_gen(inf_ests, summary_preds)
