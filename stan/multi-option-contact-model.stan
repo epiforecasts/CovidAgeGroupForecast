@@ -55,11 +55,12 @@ parameters {
 }
 
 transformed parameters{
-  real inf_rate[A];
-  real susceptibility[A];
-  matrix[A,A] contact_matrices_sym[W];
-  matrix[A,A] contact_matrices_aug[W];
+  real inf_rate[A];                          // vector of relative infectiousness by age
+  real susceptibility[A];                    // vector of relative susceptibility by age  
+  matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   
+  
+  // inf and susc vectors are calculated from the hyper parameters and unique offset parameter under NCP framework
   for(a in 1:A){
     inf_rate[a] = inf_rate_hyper_mu + inf_rate_hyper_sd * inf_prime[a];
     susceptibility[a] = suscept_hyper_mu + suscept_hyper_sd * sus_prime[a];
@@ -67,7 +68,7 @@ transformed parameters{
   
   
   
-  
+  // calculate contact matrix weighted by the population distribution to maintain reciprocity
   for( w in 1:W){
       for(ai in 1:A){
         for(aj in 1:A){
@@ -83,20 +84,18 @@ transformed parameters{
 
 
 model {
-  vector[A] full_susceptibility[T];                // container for ab and inherent susceptibiluty
-  vector[A] next_gens[T];
-  matrix[smax,A] next_gens_smax[T];
-  row_vector[A] mean_conts[W];
-  real mat_mean[W];
   
-  row_vector[A] ones = rep_row_vector(1,A);
+  vector[A] full_susceptibility[T];                // container for antibody and inherent susceptibiluty combined 
+  vector[A] next_gens[T];                          // container for timeseries of infections generated for fit
+  matrix[smax,A] next_gens_smax[T];                // container for timeseries of infections generated for fit as caused by infections originating at each date in the past
+  row_vector[A] mean_conts[W];                     // mean contacts per age group
+  real mat_mean[W];                                // mean contacts overall
+  
+  row_vector[A] ones = rep_row_vector(1,A);        // a row vector of ones 'A' long 
 
-
-  //inf_rate ~ beta(5.0, 1.0);       // age specific rate of infection on contact
-  //susceptibility ~ beta(5.0, 1.0);   // age specific inherent susceptibility 
   ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
   
-  inf_rate_hyper_mu ~ normal(0.25, 0.01)T[0,1];
+  inf_rate_hyper_mu ~ normal(0.25, 0.01)T[0,1];    // priors for inf and susc hyper parameters 
   inf_rate_hyper_sd ~ normal(0.05,0.001)T[0,];
   suscept_hyper_mu ~ normal(0.5, 0.01)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.001)T[0,];
@@ -104,7 +103,7 @@ model {
   
   
   if (contact_option==1){
-    
+    // prior for symetric contact matrix using full data 
           for(w in 1:W){
             for(ai in 1:A){
               for(aj in 1:A){
@@ -115,6 +114,7 @@ model {
   }
   
     else if (contact_option==2){
+      // prior for symetric contact matrix using only age band means
           for(w in 1:W){
             for(ai in 1:A){
               for(aj in 1:A){
@@ -131,6 +131,7 @@ model {
 }
     
   else if (contact_option==3){
+    // prior for symetric contact matrix using overall means
             for(w in 1:W){
               for(ai in 1:A){
                 for(aj in 1:A){
@@ -146,6 +147,7 @@ model {
   }
   
   else if (contact_option==4){
+    // prior for symetric contact matrix using no contact data
       for(w in 1:W){
         for(ai in 1:A){
           for(aj in 1:A){
@@ -155,14 +157,13 @@ model {
       
   }
   
-  
+  // prior for age-specific susc and inf offset in NCP framework
   for(a in 1:A){
     inf_prime[a] ~ normal(0,0.1);
     sus_prime[a] ~ normal(0,0.1);
     }
   
   
-  //sigma ~ gamma(0.05, 0.01);
   // sample priors for infections and antibodies 
   for(t in 1:T){
     for(a in 1:A){
@@ -182,13 +183,17 @@ model {
     // construct matrix to correct contact matrix to NGM
     if(t>20){
     
+    // calculate contribution for infections at t from dates between t-smax and t based on weights w_g
     for(s in 1:smax){
         next_gens_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility[t]) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-s]));
     }
     
+    // sum over all dates
     next_gens[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gens_smax[t])) ;
-        for(a in 1:A){
-               next_gens[t][a] ~ normal(inf_mu[t,a], inf_sd[t, a]);
+    
+    // sampling statement for calculated infections vs modelled infections
+    for(a in 1:A){
+          next_gens[t][a] ~ normal(inf_mu[t,a], inf_sd[t, a]);
     }
       
     }

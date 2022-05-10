@@ -1,6 +1,6 @@
 fit = fit_NGM_model_for_date_range(
   end_date = '20201001',
-  age_mod = age_mods[[1]],
+  age_mod = age_mod,
   period = period+smax, 
   inf_matrix_mean = inf_matrix_mean, 
   inf_matrix_sd = inf_matrix_sd, 
@@ -9,6 +9,7 @@ fit = fit_NGM_model_for_date_range(
   cms = cms, 
   runindex = 1, 
   quantiles=c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), 
+  contact_option = 4
 )
 summary_preds = data.table(fit$summary_preds)
 summary_preds[, age_group := age_groups[age_index]]

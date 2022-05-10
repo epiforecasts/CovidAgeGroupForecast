@@ -147,7 +147,7 @@ ggplot(actualest_inc_long)+
 
 
 age_mods = list(cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_matouts.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitmatmeans.stan'), cmdstan_model('stan/age_specific_transmission-fit_contacts_symmat_fitnothing.stan'))
-
+age_mod = cmdstan_model('stan/multi-option-contact-model.stan')
 dates = sort(head(tail(sr_dates$min_date, -5), -10))
 
 #dates = sapply(dates, lubridate::ymd)
@@ -162,7 +162,7 @@ all_est = list()
 for(r in 1:4){ 
   est <- future_lapply(
     dates, fit_NGM_model_for_date_range,
-    age_mod = age_mods[[r]],
+    age_mod = age_mod,
     period = period+smax, 
     inf_matrix_mean = inf_matrix_mean, 
     inf_matrix_sd = inf_matrix_sd, 
@@ -171,6 +171,7 @@ for(r in 1:4){
     cms = cms, 
     runindex = r, 
     quantiles=c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), 
+    contact_option=r,
     future.seed=TRUE
   )
   

@@ -4,7 +4,7 @@
 
 fit_NGM_model_for_date_range = function(end_date='20211001', 
                                         period=30, 
-                                        age_mod = age_mods[[1]],
+                                        age_mod = age_mod,
                                         inf_matrix_mean, 
                                         inf_matrix_sd, 
                                         anb_matrix_mean, 
@@ -14,7 +14,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
                                         quantiles = c(0.05, 0.5, 0.95), 
                                         samps = 100, 
                                         pops = population, 
-                                        runindex=1
+                                        runindex=1, 
+                                        contact_option=1
 ){
   
   end_date = lubridate::ymd(end_date)
@@ -69,7 +70,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
     mean_contacts_sd_mat = mean_contacts_sd_mat, 
     smax=smax, 
     w_g = weights, 
-    horizon=10
+    horizon=10, 
+    contact_option=contact_option
   )
   # compile stan model from 'stan/age_specific_transmission.stan'
   
