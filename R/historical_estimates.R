@@ -122,7 +122,7 @@ ggplot(actualest_inc_long)+
 age_mod = cmdstan_model('stan/multi-option-contact-model.stan')
 
 # select forecast dates
-dates = sort(head(tail(sr_dates$min_date, -5), -10))
+dates = sort(head(tail(sr_dates$min_date, -5), 10))
 
 # set period over which to fit for each forecast and maximum generation interval
 period = 30 
