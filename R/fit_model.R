@@ -2,9 +2,10 @@
 
 
 
-fit_NGM_model_for_date_range = function(end_date='20201201', 
+fit_NGM_model_for_date_range = function(end_date='20211001', 
                                         period=30, 
-                                        age_mod = age_mods[[1]],
+                                        smax = 20,
+                                        age_mod = age_mod,
                                         inf_matrix_mean, 
                                         inf_matrix_sd, 
                                         anb_matrix_mean, 
@@ -14,9 +15,11 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
                                         quantiles = c(0.05, 0.5, 0.95), 
                                         samps = 100, 
                                         pops = population, 
-                                        runindex=1
+                                        runindex=1, 
+                                        contact_option=1
 ){
   
+  # set the end and start dates as date objects
   end_date = lubridate::ymd(end_date)
   start_date = end_date - period
   
@@ -25,7 +28,6 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
   inf_matrix_sd = inf_matrix_sd[date < end_date & date > start_date]
   anb_matrix_mean = anb_matrix_mean[date < end_date & date > start_date]
   anb_matrix_sd = anb_matrix_sd[date < end_date & date > start_date]
-  
   inf_matrix_mean[, sr := cut(date, breaks=c(sr_dates$min_date, max(sr_dates$max_date)), labels = sort(sr_dates$survey_round) )]
   
   sr_dates = sr_dates[survey_round %in% inf_matrix_mean$sr]
@@ -36,16 +38,24 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
   # load contact matrices into list
   contact_matrices = lapply(X=sort(unique(sr_dates$survey_round)), function(X){t(matrix(cms[sr==X]$cms, nrow=7))})
   
-  
+  # calculate symmetric contact matrix means and SD from samples
   contact_matrices_mu = lapply(X=sort(unique(sr_dates$survey_round)), function(X){t(matrix(cms[sr==X]$cms, nrow=7))/tail(pops,-1)$props})
   contact_matrices_sd = lapply(X=sort(unique(sr_dates$survey_round)), function(X){t(matrix(cms[sr==X]$csd, nrow=7))/tail(pops,-1)$props})
   
+  # calculate  mean and sd of contacts by age group
   mean_contacts_mu = lapply(contact_matrices_mu, rowSums)
   mean_contacts_sd = lapply(contact_matrices_sd, rowSums)
   
+  # calculate  mean and sd of contacts overall
   mean_contacts_mu_mat = sapply(mean_contacts_mu, mean)
   mean_contacts_sd_mat = sapply(mean_contacts_sd, mean)
-  # set up data input for stan 
+  
+  # set max generation interval and weights for generation interval distribution
+  smax = 20
+  weights = dgamma(1:20, 10, 1.7 )
+  weights = weights/sum(weights)
+  
+  # construct data object for stan unput
   data = list( 
     T = dim(inf_matrix_mean[,-c('date', 'sr')])[1],
     W = dim(sr_dates)[1],
@@ -62,10 +72,16 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
     mean_contacts_mu = mean_contacts_mu,
     mean_contacts_sd = mean_contacts_sd, 
     mean_contacts_mu_mat = mean_contacts_mu_mat,
-    mean_contacts_sd_mat = mean_contacts_sd_mat
+    mean_contacts_sd_mat = mean_contacts_sd_mat, 
+    smax=smax, 
+    w_g = weights, 
+    horizon=10, 
+    contact_option=contact_option
   )
-  # compile stan model from 'stan/age_specific_transmission.stan'
   
+  
+  
+  # fit the model  
   fit = age_mod$sample(data, 
                        iter_warmup = 250,
                        iter_sampling=250, 
@@ -75,6 +91,8 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
                        seed = sample.int(.Machine$integer.max, 1))
   
   
+  
+  # create data frames from stan outputs
   summary_pars = fit$summary(
     variables = variables, ~ quantile(.x, probs = quantiles)
   ) %>%
@@ -144,6 +162,9 @@ fit_NGM_model_for_date_range = function(end_date='20201201',
       run = runindex
     )
   
+  
+  
+  # construct output container
   outs = list(
     fit = list(fit),
     samples_pars = draws_pars, 

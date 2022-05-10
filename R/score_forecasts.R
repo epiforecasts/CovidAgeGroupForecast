@@ -1,17 +1,6 @@
 library(cowplot)
-pandemic_periods = 
-  list(
-    reduced_restrictions, lubridate::ymd('2020-07-30'), 
-    schools_opened = lubridate::ymd('2020-09-04'),
-    Lockdown_2, lubridate::ymd('2020-11-05'),
-    L2_Easing, lubridate::ymd('2020-12-03'),
-    Christmas, lubridate::ymd('2020-12-20'),
-    Lockdown_3, lubridate::ymd('2021-05-01'), 
-    L3_Schools_open, lubridate::ymd('2021-03-09'), 
-    L3_easing, lubridate::ymd('2021-03-29'), 
-    Open, lubridate::ymd('2021-10-01')
-  )
 
+# set dates and names of key pandemic periods
 pandemic_periods = data.table(
   
   periods = 
@@ -41,28 +30,34 @@ pandemic_periods = data.table(
 )
 
 
-
+# function to score forecasts based on single 'true' time series of infections
 score_forecasts = function(summary_preds, pandemic_periods) {
   
   preds_long = melt(summary_preds[name=='forecast_gens'], 
                     id.vars = c('date', 'age_group', 'name', 'age_index', 'time_index', 'age_index', 'forecast_date', 'run', 'value'), 
                     measure.vars = c('5%',  '10%', '25%',     '50%',   '75%', '90%',     '95%'), value.name = 'prediction', variable.name = 'quantile_chr')
+  
+  # manipulate outputs into correct format
   preds_long[, quantile := as.numeric(sub("%", "", quantile_chr, fixed=TRUE))/100]
   preds_long[, true_value := value]
   preds_long[, value_date := forecast_date]
   preds_long[, value_type := name]
   preds_long[, horizon := as.numeric(date - forecast_date)]
   preds_long[, model := run]
-  
   preds_to_score = preds_long[,c('value_date', 'value_type', 'age_index', 'age_group', 'true_value', 'model', 'quantile', 'prediction', 'horizon')]
   
+  
+  # create column to indicate pandemic periods 
   preds_to_score[, periods:=cut(preds_to_score$value_date,
                                 breaks = pandemic_periods$date_breaks, 
                                 labels = head(pandemic_periods$periods,-1))]
   
+  
+  # calculate scores aggregated by age and pandemic period
   score_by_age = scoringutils::eval_forecasts(preds_to_score, 
                                               summarise_by = c("model", "age_index", "periods"))
   
+  # calculate scores aggregated by forecast date
   score_by_fd = scoringutils::eval_forecasts(preds_to_score, 
                                              summarise_by = c("model", "value_date"))
   
@@ -102,7 +97,7 @@ score_forecasts = function(summary_preds, pandemic_periods) {
   ggsave('plots/scores_age_period.png', plot=p2, height=7, width=22, units = 'in', dpi=300)
   
   
-  
+  # calculate scores aggregated by age and pandemic period relative to baseline model
   score_by_age_rel = merge(score_by_age, score_by_age[model=='baseline_last_diff', ], by = c('age_index','periods'), suffixes = c('', '_baseline'))
   score_by_age_rel[,
                    c(
@@ -118,6 +113,8 @@ score_forecasts = function(summary_preds, pandemic_periods) {
                      )
   ]
   
+  
+  # calculate scores aggregated by forecast date relative to baseline model
   score_by_fd_rel = merge(score_by_fd, score_by_fd[model=='baseline_last_diff', ], by = c('value_date'), suffixes = c('', '_baseline'))
   score_by_fd_rel[,
                    c(
@@ -171,13 +168,13 @@ score_forecasts = function(summary_preds, pandemic_periods) {
   ggsave('plots/scores_age_period_relative.png', plot=p2, height=15, width=10, units = 'in', dpi=300) 
   
   
-  
+  # calculate scores aggregated by pandemic period
   score_by_period = scoringutils::eval_forecasts(preds_to_score, 
                                               summarise_by = c("model", "periods"))
-  
+  # calculate scores aggregated over entire output
   score_overall = scoringutils::eval_forecasts(preds_to_score, 
                                              summarise_by = c("model"))
-  
+  # calculate scores aggregated by age 
   score_age = scoringutils::eval_forecasts(preds_to_score, 
                                                summarise_by = c("model", 'age_group'))
   
@@ -189,10 +186,10 @@ score_forecasts = function(summary_preds, pandemic_periods) {
 
 }
 
-
+# score based on summary preds (output needed before run)
 summary_scores = score_forecasts(summary_preds[date<lubridate::ymd(20211201)], pandemic_periods)
 
-
+# create tables of scores
 st1 = melt(summary_scores[[2]], id.vars = c('model', 'periods'), measure.vars = c('interval_score', 'aem', 'bias'), variable.name = 'score_type', value.name = 'score')
 overall_table = dcast(st1, formula = periods + score_type ~ model, value.var = 'score')
 
