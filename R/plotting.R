@@ -21,15 +21,15 @@ plot_trajectories = function(summary_preds, d){
 }
 
 
-plot_trajectories_one_ax = function(summary_preds, d){
+plot_trajectories_one_ax = function(summary_preds, d, smax, period){
   ggplot()+
     #geom_rect(data=summary_preds[name == 'infections' & forecast_date %in% d,], aes(xmin=date-0.2, xmax=date+0.2, ymin=`5%`, ymax=`95%`), fill='blue', alpha=0.3)+
-    geom_point(data=summary_preds[name == 'next_gens' & forecast_date %in% d,], aes(x=date, y=value), size=0.01)+
-    geom_point(data=summary_preds[name == 'forecast_gens' & forecast_date %in% d,], aes(x=date, y=value), size=0.01)+
+    geom_point(data=summary_preds[name == 'next_gens' & forecast_date %in% d & time_index>(smax + period - 1),], aes(x=date, y=value), size=0.01)+
+    geom_point(data=summary_preds[name == 'forecast_gens' & forecast_date %in% d & time_index>(smax + period - 1),], aes(x=date, y=value), size=0.01)+
     #geom_rect(data=summary_preds[name == 'next_gens' & forecast_date %in% d,], aes(xmin=date-0.2, xmax=date+0.2, ymin=`5%`, ymax=`95%`), fill='limegreen', alpha=0.5)+
-    geom_rect(data=summary_preds[name == 'forecast_gens' & forecast_date %in% d,], aes(xmin=date-0.2, xmax=date+0.2, ymin=`5%`, ymax=`95%`, fill=as.character(run)), alpha=0.2)+
+    geom_rect(data=summary_preds[name == 'forecast_gens' & forecast_date %in% d & time_index>(smax + period - 1),], aes(xmin=date-0.2, xmax=date+0.2, ymin=`5%`, ymax=`95%`, fill=as.character(run)), alpha=0.2)+
     #geom_point(data=summary_preds[name == 'next_gens' & forecast_date %in% d,], aes(x=date, y=`50%`), color='green', size=0.01)+
-    geom_point(data=summary_preds[name == 'forecast_gens' & forecast_date %in% d,], aes(x=date, y=`50%`, color=as.character(run)), size=0.01)+
+    geom_point(data=summary_preds[name == 'forecast_gens' & forecast_date %in% d & time_index>(smax + period - 1),], aes(x=date, y=`50%`, color=as.character(run)), size=0.01)+
     
     facet_wrap(~age_index, labeller =labeller(age_index=age_labs), ncol=2)+
     scale_x_date(name='')+
