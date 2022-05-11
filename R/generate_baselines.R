@@ -1,4 +1,3 @@
-``
 
 
 same_as_last_gen = function(inf_ests, summary_preds, generation_time=5){
@@ -54,7 +53,7 @@ same_as_last_value = function(inf_ests, summary_preds, smax=20, period=30){
   
   bl_values = inf_ests[date %in% unique(summary_preds$forecast_date), c('date', 'variable', 'q5', 'q10', 'q25', 'q50', 'q75', 'q90', 'q95')] %>% rename(age_group = variable, forecast_date=date)
   bl_values[, forecast_date:=lubridate::ymd(forecast_date)]
-  baseline_last_gen = unique(summary_preds[name=='forecast_gens',c('date', 'age_group', 'time_index', 'age_index', 'forecast_date')])
+  baseline_last_gen = unique(summary_preds[name=='forecast_gens'  & time_index > (smax+period),c('date', 'age_group', 'time_index', 'age_index', 'forecast_date')])
   baseline_last_gen[, name:= 'forecast_gens']
   baseline_last_gen[, run := 'baseline_last_val']
   

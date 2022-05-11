@@ -95,10 +95,10 @@ model {
 
   ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
   
-  inf_rate_hyper_mu ~ normal(0.25, 0.01)T[0,1];    // priors for inf and susc hyper parameters 
-  inf_rate_hyper_sd ~ normal(0.05,0.005)T[0,];
-  suscept_hyper_mu ~ normal(0.5, 0.05)T[0,1];
-  suscept_hyper_sd ~ normal(0.1, 0.005)T[0,];
+  inf_rate_hyper_mu ~ normal(0.25, 0.05)T[0,1];    // priors for inf and susc hyper parameters 
+  inf_rate_hyper_sd ~ normal(0.05,0.01)T[0,];
+  suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
+  suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
   
   
