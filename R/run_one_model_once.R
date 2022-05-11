@@ -9,7 +9,7 @@ fit = fit_NGM_model_for_date_range(
   cms = cms, 
   runindex = 1, 
   quantiles=c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), 
-  contact_option = 4
+  contact_option = 1
 )
 summary_preds = data.table(fit$summary_preds)
 summary_preds[, age_group := age_groups[age_index]]
@@ -25,3 +25,4 @@ ggplot() +
              aes(x=date, y=value, color=age_group), shape=18, size=3, alpha=0.8)+
   geom_vline(xintercept = 49)
 
+fit$summary_pars

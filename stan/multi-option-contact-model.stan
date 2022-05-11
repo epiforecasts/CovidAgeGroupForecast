@@ -21,7 +21,7 @@ data {
   int day_to_week_converter[T];      // id vector to determine which cm to use for each day
   
   int<lower=0> smax;                  // maximum generation interval
-  real<lower=0> w_g[smax];            // weights - generation interval distribution
+  //real<lower=0> w_g[smax];            // weights - generation interval distribution
   int<lower=0> horizon;               // number of days to forecast
   
   int<lower=0> contact_option;
@@ -52,12 +52,15 @@ parameters {
   //real<lower=0,upper=1> susceptibility[A]; // age specific susceptibility 
   real<lower=0,upper=1> ab_protection; // protection offered by antibodies
   // real<lower=0> sigma; // uncertainty in estimates
+  real<lower=0> w_alpha; 
+  real<lower=0> w_beta;
 }
 
 transformed parameters{
   real inf_rate[A];                          // vector of relative infectiousness by age
   real susceptibility[A];                    // vector of relative susceptibility by age  
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
+  real w_g[smax];
   
   
   // inf and susc vectors are calculated from the hyper parameters and unique offset parameter under NCP framework
@@ -76,6 +79,10 @@ transformed parameters{
           else contact_matrices_aug[w, ai, aj] = contact_matrices[w, aj, ai] * population[ai];
     }}}
   
+  
+  for(s in 1:smax){
+    w_g[s] = gamma_cdf(s+1, w_alpha, w_beta) - gamma_cdf(s, w_alpha, w_beta);
+  }
   
 }
     
@@ -99,6 +106,9 @@ model {
   inf_rate_hyper_sd ~ normal(0.05,0.01)T[0,];
   suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
+  
+  w_alpha ~ normal(10, 2)T[0,20];
+  w_beta ~ normal(1.7, 0.3)T[0,3];
   
   
   
