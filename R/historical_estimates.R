@@ -122,7 +122,7 @@ ggplot(actualest_inc_long)+
 age_mod = cmdstan_model('stan/multi-option-contact-model.stan')
 
 # select forecast dates
-dates = sort(head(tail(sr_dates$min_date, -5), 10))
+dates = sort(head(tail(sr_dates$min_date, -5), 3))
 
 # set period over which to fit for each forecast and maximum generation interval
 period = 30 
@@ -153,7 +153,7 @@ for(r in 1:4){
 }
 
 
-# combine the outputs from all dates into one container
+ # combine the outputs from all dates into one container
 summary_pars = data.table()
 for(i in 1:length(all_est)){
   summary_pars = rbind(summary_pars, data.table(all_est[[i]]$summary_pars))
@@ -202,7 +202,7 @@ sort(dates)
 plot_parameters(summary_pars, d)
 
 # plot forecasts on one axis
-plot_trajectories_one_ax(summary_preds, d)
+plot_trajectories_one_ax(summary_preds, d, smax=20, period=30)
 
 # save forecast plot
 ggsave("plots/trajectories_zoomed.pdf", width = 10, height=7)
