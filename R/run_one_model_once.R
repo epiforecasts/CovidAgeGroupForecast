@@ -26,3 +26,6 @@ ggplot() +
   geom_vline(xintercept = 49)
 
 fit$summary_pars
+
+
+summary_pars = data.table(fit$summary_pars)
