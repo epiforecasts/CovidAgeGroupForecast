@@ -52,8 +52,9 @@ parameters {
   //real<lower=0,upper=1> susceptibility[A]; // age specific susceptibility 
   real<lower=0,upper=1> ab_protection; // protection offered by antibodies
   // real<lower=0> sigma; // uncertainty in estimates
-  real<lower=0> w_alpha; 
-  real<lower=0> w_beta;
+  real<lower=0> w_mu; 
+  real<lower=0> w_sig;
+
 }
 
 transformed parameters{
@@ -61,6 +62,8 @@ transformed parameters{
   real susceptibility[A];                    // vector of relative susceptibility by age  
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
+  real<lower=0> w_alpha; 
+  real<lower=0> w_beta;
   
   
   // inf and susc vectors are calculated from the hyper parameters and unique offset parameter under NCP framework
@@ -79,13 +82,15 @@ transformed parameters{
           else contact_matrices_aug[w, ai, aj] = contact_matrices[w, aj, ai] * population[ai];
     }}}
   
+  w_alpha = (w_mu/w_sig)^2 + 0.001;
+  w_beta  = w_mu/(w_sig^2) + 0.001;
   
   for(s in 1:smax){
-    w_g[s] = gamma_cdf(s, w_alpha, w_beta) - gamma_cdf(s-1, w_alpha, w_beta);
+    w_g[s] = gamma_cdf(s, w_alpha, w_beta) - gamma_cdf(s-0.9999, w_alpha, w_beta);
   }
-  for(s in 1:smax){
-    w_g[s] = w_g[s]/sum(w_g);
-  }
+  //for(s in 1:smax){
+  //  w_g[s] = w_g[s]/sum(w_g);
+  //}
 }
     
 
@@ -109,8 +114,8 @@ model {
   suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
-  w_alpha ~ normal(10, 2)T[0,20];
-  w_beta ~ normal(1.7, 0.3)T[0,3];
+  w_mu ~ normal(5, 2)T[0,];
+  w_sig ~ normal(1.7, 0.3)T[0,];
   
   
   
