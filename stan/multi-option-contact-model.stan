@@ -81,9 +81,11 @@ transformed parameters{
   
   
   for(s in 1:smax){
-    w_g[s] = gamma_cdf(s+1, w_alpha, w_beta) - gamma_cdf(s, w_alpha, w_beta);
+    w_g[s] = gamma_cdf(s, w_alpha, w_beta) - gamma_cdf(s-1, w_alpha, w_beta);
   }
-  
+  for(s in 1:smax){
+    w_g[s] = w_g[s]/sum(w_g);
+  }
 }
     
 
@@ -169,8 +171,8 @@ model {
   
   // prior for age-specific susc and inf offset in NCP framework
   for(a in 1:A){
-    inf_prime[a] ~ normal(0,0.1);
-    sus_prime[a] ~ normal(0,0.1);
+    inf_prime[a] ~ normal(0,1);
+    sus_prime[a] ~ normal(0,1);
     }
   
   
