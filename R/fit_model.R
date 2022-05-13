@@ -11,7 +11,7 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
                                         anb_matrix_mean, 
                                         anb_matrix_sd, 
                                         cms, 
-                                        variables = c('inf_rate', 'susceptibility', 'ab_protection', 'w_alpha', 'w_beta'),
+                                        variables = c('inf_rate', 'susceptibility', 'ab_protection'),
                                         quantiles = c(0.05, 0.5, 0.95), 
                                         samps = 100, 
                                         pops = population, 
@@ -80,7 +80,7 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
   )
   
   
-  
+  init_fun <- function(...) list(w_mu=5.0, w_sigma=1.5)
   # fit the model  
   fit = age_mod$sample(data, 
                        iter_warmup = 250,

@@ -8,31 +8,26 @@ data {
   real inf_sd[T,A];                    // infections parameter matrix
   real anb_mu[T,A];                    // antibodies parameter matrix
   real anb_sd[T,A];                    // antibodies parameter matrix
+  
   matrix[A,A] contact_matrices_mu [W];      // contact matricies means
   matrix[A,A] contact_matrices_sd [W];      // contact matricies means
-  
   real mean_contacts_mu[W,A];
   real mean_contacts_sd[W,A];
   real mean_contacts_mu_mat[W];
   real mean_contacts_sd_mat[W];
   
-  real population[A];
-  
   int day_to_week_converter[T];      // id vector to determine which cm to use for each day
   
-  int<lower=0> smax;                  // maximum generation interval
-  //real<lower=0> w_g[smax];            // weights - generation interval distribution
-  int<lower=0> horizon;               // number of days to forecast
+  real population[A];
   
+  int<lower=0> smax;                  // maximum generation interval
+  int<lower=0> horizon;               // number of days to forecast
   int<lower=0> contact_option;
+  
+  //real<lower=0> w_g[smax];            // weights - generation interval distribution
+
 }
 
-transformed data{
-  matrix [T,A] infections_fixed;
-  matrix [T,A] antibodies_fixed;
-  infections_fixed = to_matrix(inf_mu);
-  antibodies_fixed = to_matrix(anb_mu);
-}
 
 parameters {
   // incidence of infection and ab prevalence modelled as parameters drawn from 
@@ -82,15 +77,15 @@ transformed parameters{
           else contact_matrices_aug[w, ai, aj] = contact_matrices[w, aj, ai] * population[ai];
     }}}
   
-  w_alpha = (w_mu/w_sig)^2 + 0.001;
-  w_beta  = w_mu/(w_sig^2) + 0.001;
+  w_alpha = ((w_mu+0.0001)/(w_sig+0.0001))^2;
+  w_beta  = (w_mu+0.0001)/((w_sig+0.0001)^2);
   
   for(s in 1:smax){
-    w_g[s] = gamma_cdf(s, w_alpha, w_beta) - gamma_cdf(s-0.9999, w_alpha, w_beta);
+    w_g[s] = gamma_cdf(s | w_alpha, w_beta) - gamma_cdf(s-1 | w_alpha, w_beta);
   }
-  //for(s in 1:smax){
-  //  w_g[s] = w_g[s]/sum(w_g);
-  //}
+  for(s in 1:smax){
+    w_g[s] = w_g[s]/sum(w_g);
+  }
 }
     
 
@@ -106,16 +101,15 @@ model {
   real mat_mean[W];                                // mean contacts overall
   
   row_vector[A] ones = rep_row_vector(1,A);        // a row vector of ones 'A' long 
-
-  ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
   
+  ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
   inf_rate_hyper_mu ~ normal(0.25, 0.05)T[0,1];    // priors for inf and susc hyper parameters 
   inf_rate_hyper_sd ~ normal(0.05,0.01)T[0,];
   suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
-  w_mu ~ normal(5, 2)T[0,];
-  w_sig ~ normal(1.7, 0.3)T[0,];
+  w_mu ~ normal(5, 1)T[0,10];
+  w_sig ~ normal(1.7, 0.17)T[0,5];
   
   
   
