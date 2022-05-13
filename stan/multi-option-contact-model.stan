@@ -57,8 +57,8 @@ transformed parameters{
   real susceptibility[A];                    // vector of relative susceptibility by age  
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
-  real<lower=0> w_alpha; 
-  real<lower=0> w_beta;
+  //real<lower=0> w_alpha; 
+  //real<lower=0> w_beta;
   
   
   // inf and susc vectors are calculated from the hyper parameters and unique offset parameter under NCP framework
@@ -77,15 +77,16 @@ transformed parameters{
           else contact_matrices_aug[w, ai, aj] = contact_matrices[w, aj, ai] * population[ai];
     }}}
   
-  w_alpha = ((w_mu+0.0001)/(w_sig+0.0001))^2;
-  w_beta  = (w_mu+0.0001)/((w_sig+0.0001)^2);
+  //w_alpha = ((w_mu+0.0001)/(w_sig+0.0001))^2;
+  //w_beta  = (w_mu+0.0001)/((w_sig+0.0001)^2);
   
   for(s in 1:smax){
-    w_g[s] = gamma_cdf(s | w_alpha, w_beta) - gamma_cdf(s-1 | w_alpha, w_beta);
+    w_g[s] = lognormal_cdf(s, w_mu, w_sig) - lognormal_cdf(s-1, w_mu, w_sig);
   }
   for(s in 1:smax){
     w_g[s] = w_g[s]/sum(w_g);
   }
+  
 }
     
 
@@ -108,8 +109,8 @@ model {
   suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
-  w_mu ~ normal(5, 1)T[0,10];
-  w_sig ~ normal(1.7, 0.17)T[0,5];
+  w_mu ~ normal(5, 1)T[0,];
+  w_sig ~ normal(1.7, 0.17)T[0,];
   
   
   
