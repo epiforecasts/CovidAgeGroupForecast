@@ -1,13 +1,13 @@
 
 data {
-  int<lower=0> T; //number of days in time-series
-  int<lower=0> W; //number of weeks
-  int<lower=0> A; //age groups
+  int<lower=0> T;                           //number of days in time-series
+  int<lower=0> W;                           //number of weeks
+  int<lower=0> A;                           //age groups
 
-  real inf_mu[T,A];                    // infections parameter matrix
-  real inf_sd[T,A];                    // infections parameter matrix
-  real anb_mu[T,A];                    // antibodies parameter matrix
-  real anb_sd[T,A];                    // antibodies parameter matrix
+  real inf_mu[T,A];                         // infections parameter matrix
+  real inf_sd[T,A];                         // infections parameter matrix
+  real anb_mu[T,A];                         // antibodies parameter matrix
+  real anb_sd[T,A];                         // antibodies parameter matrix
   
   matrix[A,A] contact_matrices_mu [W];      // contact matricies means
   matrix[A,A] contact_matrices_sd [W];      // contact matricies means
@@ -16,15 +16,15 @@ data {
   real mean_contacts_mu_mat[W];
   real mean_contacts_sd_mat[W];
   
-  int day_to_week_converter[T];      // id vector to determine which cm to use for each day
+  int day_to_week_converter[T];             // id vector to determine which cm to use for each day
   
   real population[A];
   
-  int<lower=0> smax;                  // maximum generation interval
-  int<lower=0> horizon;               // number of days to forecast
+  int<lower=0> smax;                        // maximum generation interval
+  int<lower=0> horizon;                     // number of days to forecast
   int<lower=0> contact_option;
   
-  //real<lower=0> w_g[smax];            // weights - generation interval distribution
+  //real<lower=0> w_g[smax];                // weights - generation interval distribution
 
 }
 
@@ -43,12 +43,18 @@ parameters {
   matrix<lower=0>[A,A] contact_matrices[W];   // contact matrices - Q pof
   real inf_prime[A];
   real sus_prime[A];
-  //real<lower=0,upper=1> inf_rate[A];       // age specific rate of infection conditional on contact with 100% susceptibility
-  //real<lower=0,upper=1> susceptibility[A]; // age specific susceptibility 
-  real<lower=0,upper=1> ab_protection; // protection offered by antibodies
-  // real<lower=0> sigma; // uncertainty in estimates
+  //real<lower=0,upper=1> inf_rate[A];        // age specific rate of infection conditional on contact with 100% susceptibility
+  //real<lower=0,upper=1> susceptibility[A];  // age specific susceptibility 
+  real<lower=0,upper=1> ab_protection;        // protection offered by antibodies
+
   real<lower=0> w_mu; 
   real<lower=0> w_sig;
+  
+  real<lower=0> sigma_inf;                    // uncertainty in model
+  
+  matrix<lower=0>[A,A] sigma_cm;
+  real<lower=0> sigma_mca[A];
+  real<lower=0> sigma_mc;
 
 }
 
@@ -57,6 +63,13 @@ transformed parameters{
   real susceptibility[A];                    // vector of relative susceptibility by age  
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
+  
+  
+  real<lower=0> combined_sigma[T,A];
+  real<lower=0> combined_sigma_cm[contact_option == 1 ? W : 0, contact_option == 1 ? A : 0,  contact_option == 1 ? A : 0];
+  real<lower=0> combined_sigma_mca[contact_option == 2 ? W : 0, contact_option == 2 ? A : 0];
+  real<lower=0> combined_sigma_mc[contact_option == 3 ? W : 0];
+  
   //real<lower=0> w_alpha; 
   //real<lower=0> w_beta;
   
@@ -87,6 +100,31 @@ transformed parameters{
     w_g[s] = w_g[s]/sum(w_g);
   }
   
+  for(t in 1:T){
+    for(a in 1:A){
+      combined_sigma[t,a] = sqrt(sigma_inf^2 + inf_sd[t,a]^2);
+    }
+  }
+  
+  for(w in 1:W){
+    if(contact_option==1){
+      for(a in 1:A){
+        for(b in 1:A){
+          combined_sigma_cm[w,a,b] = sqrt(sigma_cm[a,b]^2 + contact_matrices_sd[w,a,b]^2);
+        }
+      }
+    }
+    
+    if(contact_option==2){
+      for(a in 1:A){
+        combined_sigma_mca[w,a] = sqrt(sigma_mca[a]^2 + mean_contacts_sd[w,a]^2);
+      }
+    }
+    
+    if(contact_option==3){
+      combined_sigma_mc[w] = sqrt(sigma_mc^2 + mean_contacts_sd_mat[w]^2);
+    }
+    }
 }
     
 
@@ -112,15 +150,31 @@ model {
   w_mu ~ normal(5, 1)T[0,];
   w_sig ~ normal(1.7, 0.17)T[0,];
   
+  sigma_inf ~ normal(0.005, 0.0025) T[0,];
+  
+  for(ai in 1:A){
+   for(aj in 1:A){
+    sigma_cm[ai,aj] ~ normal(0.005, 0.0025) T[0,]; 
+   }
+  }
+  
+  for(a in 1:A){
+    sigma_mca[a] ~ normal(0.005, 0.0025) T[0,]; 
+  }
+  
+  sigma_mc ~ normal(0.005, 0.0025) T[0,];
+
+  
   
   
   if (contact_option==1){
     // prior for symetric contact matrix using full data 
+    
           for(w in 1:W){
             for(ai in 1:A){
               for(aj in 1:A){
-            
-            contact_matrices[w, ai, aj] ~ normal(contact_matrices_mu[w, ai, aj], contact_matrices_sd[w, ai, aj])T[0,];
+                contact_matrices[w, ai, aj] ~ gamma(2,2);
+                contact_matrices_mu[w, ai, aj] ~ normal(contact_matrices[w, ai, aj], combined_sigma_cm[w,ai,aj])T[0,];
           }}}
   
   }
@@ -133,10 +187,9 @@ model {
             
             contact_matrices[w, ai, aj] ~ gamma(2,2);
           }}
-            
-          
           mean_conts[w] = ones * contact_matrices_aug[w];
-          to_array_1d(mean_conts[w]) ~ normal(mean_contacts_mu[w], mean_contacts_sd[w]);
+          mean_contacts_mu[w] ~ normal(to_array_1d(mean_conts[w]), combined_sigma_mca[w]);
+
     
     
   }
@@ -154,7 +207,8 @@ model {
             
               mean_conts[w] = ones * contact_matrices_aug[w];
               mat_mean[w] = mean(to_array_1d(mean_conts[w]));
-              mat_mean[w] ~ normal(mean_contacts_mu_mat[w], mean_contacts_sd_mat[w]);
+              mean_contacts_mu_mat[w] ~ normal(mat_mean[w], combined_sigma_mc[w]);
+
               }
   }
   
@@ -205,7 +259,8 @@ model {
     
     // sampling statement for calculated infections vs modelled infections
     for(a in 1:A){
-          next_gens[t][a] ~ normal(inf_mu[t,a], inf_sd[t, a]);
+          inf_mu[t,a] ~ normal(next_gens[t][a], combined_sigma[t, a]);
+
     }
       
     }
