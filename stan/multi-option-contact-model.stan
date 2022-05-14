@@ -315,7 +315,7 @@ generated quantities{
       for(s in 1:smax){
         forecast_gens_smax[T+f][s] = to_row_vector(w_g[s] * diag_matrix(full_susceptibility[T]) * contact_matrices_aug[day_to_week_converter[T]] * diag_matrix(to_vector(inf_rate))  * to_vector(forecast_gens[T+f-s]));
       }
-     forecast_gens[T+f] = to_vector(rep_row_vector(1,smax) *  to_matrix(forecast_gens_smax[T+f])) ;
+     forecast_gens[T+f] = to_vector(normal_rng(rep_row_vector(1,smax) *  to_matrix(forecast_gens_smax[T+f]), sigma_inf));
    
   }
 
