@@ -1,5 +1,6 @@
 
 data {
+  
   int<lower=0> T;                           //number of days in time-series
   int<lower=0> W;                           //number of weeks
   int<lower=0> A;                           //age groups
@@ -22,7 +23,8 @@ data {
   
   int<lower=0> smax;                        // maximum generation interval
   int<lower=0> horizon;                     // number of days to forecast
-  int<lower=0> contact_option;
+  int<lower=0> contact_option;              // 1-full matrices, 2-age-group means, 3-overall means, 4-no contact data.
+  int<lower=0> sigma_option;                // 1-fit sd, 2-fit (pseudo) COV [COV normalised by the mean input infections as opposed to the fit value]
   
   //real<lower=0> w_g[smax];                // weights - generation interval distribution
 
@@ -100,11 +102,26 @@ transformed parameters{
     w_g[s] = w_g[s]/sum(w_g);
   }
   
-  for(t in 1:T){
-    for(a in 1:A){
-      combined_sigma[t,a] = sqrt(sigma_inf^2 + inf_sd[t,a]^2);
+  
+  if(sigma_option==1)
+    {
+      for(t in 1:T){
+        for(a in 1:A){
+          combined_sigma[t,a] = sqrt(sigma_inf^2 + inf_sd[t,a]^2);
+        }
     }
-  }
+    }
+    
+    
+  if(sigma_option==2)
+    {
+      for(t in 1:T){
+        for(a in 1:A){
+          combined_sigma[t,a] = sqrt((sigma_inf * inf_mu[t,a])^2 + inf_sd[t,a]^2);
+        }
+    }
+    }
+  
   
   for(w in 1:W){
     if(contact_option==1){
