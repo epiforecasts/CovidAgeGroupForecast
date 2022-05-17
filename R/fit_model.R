@@ -16,7 +16,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
                                         samps = 100, 
                                         pops = population, 
                                         runindex=1, 
-                                        contact_option=1
+                                        contact_option=1, 
+                                        sigma_option=1
 ){
   
   # set the end and start dates as date objects
@@ -76,7 +77,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
     smax=smax, 
     w_g = weights, 
     horizon=10, 
-    contact_option=contact_option
+    contact_option=contact_option, 
+    sigma_option=sigma_option
   )
   
   
