@@ -98,7 +98,7 @@ score_forecasts = function(summary_preds, pandemic_periods) {
   
   
   # calculate scores aggregated by age and pandemic period relative to baseline model
-  score_by_age_rel = merge(score_by_age, score_by_age[model=='baseline_last_diff', ], by = c('age_index','periods'), suffixes = c('', '_baseline'))
+  score_by_age_rel = merge(score_by_age, score_by_age[model=='baseline_linex_lv', ], by = c('age_index','periods'), suffixes = c('', '_baseline'))
   score_by_age_rel[,
                    c(
                      'interval_score_rel',
@@ -115,7 +115,7 @@ score_forecasts = function(summary_preds, pandemic_periods) {
   
   
   # calculate scores aggregated by forecast date relative to baseline model
-  score_by_fd_rel = merge(score_by_fd, score_by_fd[model=='baseline_last_diff', ], by = c('value_date'), suffixes = c('', '_baseline'))
+  score_by_fd_rel = merge(score_by_fd, score_by_fd[model=='baseline_linex_lv', ], by = c('value_date'), suffixes = c('', '_baseline'))
   score_by_fd_rel[,
                    c(
                      'interval_score_rel',
