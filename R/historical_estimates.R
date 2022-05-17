@@ -49,7 +49,8 @@ inf_traj = ggplot(inf_estimates) +
   scale_y_continuous(name='Infections')+
   scale_x_date(breaks = c(), name='')+
   theme_minimal_hgrid()+
-  ggtitle('A')
+  ggtitle('A')+
+  geom_vline(xintercept = lubridate::ymd('2021-11-09'))
 
 # construct mean and sd of infections matrices
 inf_matrix_mean  = dcast(inf_estimates, value.var = 'mean_no', date ~ variable)
@@ -77,7 +78,8 @@ anb_traj = ggplot(ab_estimates) +
   scale_x_date(date_labels = '%b-%y')+
   theme_minimal_hgrid()+
   theme(axis.text.x = element_text(angle = 45))+
-  ggtitle('B')
+  ggtitle('B')+
+  geom_vline(xintercept = lubridate::ymd('2021-11-09'))
 
 # combine and save time series plots
 input_plot = inf_traj/anb_traj
