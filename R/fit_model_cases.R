@@ -2,7 +2,7 @@
 
 
 
-fit_NGM_model_for_date_range = function(end_date='20211001', 
+fit_NGM_model_for_date_range_cases = function(end_date='20211001', 
                                         period=30, 
                                         smax = 20,
                                         age_model = age_mod_cases,
@@ -79,11 +79,7 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
     T = dim(inf_matrix_mean_inp)[1],
     W = dim(sr_dates)[1],
     A = dim(inf_matrix_mean_inp)[2],
-    inf_mu = inf_matrix_mean_inp,
     cases = inf_matrix_mean_inp,
-    inf_sd = inf_matrix_sd_inp,
-    anb_mu = anb_matrix_sd_inp,
-    anb_sd = anb_matrix_sd_inp,
     day_to_week_converter = day_to_week,
     contact_matrices = contact_matrices,
     contact_matrices_mu = contact_matrices_mu,
@@ -127,7 +123,7 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
     ) 
   
   summary_preds = fit$summary(
-    variables = c('next_gens', 'forecast_gens', 'infections'), ~ quantile(.x, probs = quantiles, na.rm=TRUE)
+    variables = c('next_gens', 'forecast_gens'), ~ quantile(.x, probs = quantiles, na.rm=TRUE)
   ) %>%
     dplyr::as_tibble() %>%
     dplyr::rename(name = variable) %>%
