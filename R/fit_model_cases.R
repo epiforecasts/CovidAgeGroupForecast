@@ -11,7 +11,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
                                         anb_matrix_mean, 
                                         anb_matrix_sd, 
                                         cms, 
-                                        variables = c('inf_rate', 'susceptibility', 'ab_protection', 'w_mu', 'w_sig'),
+                                        variables = c('inf_rate', 'susceptibility', 'w_mu', 'w_sig'),
                                         quantiles = c(0.05, 0.5, 0.95), 
                                         samps = 100, 
                                         pops = tail(population, -1), 
@@ -104,7 +104,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
                        iter_sampling=250, 
                        chains=1, 
                        max_treedepth = 12, 
-                       adapt_delta=0.8, 
+                       adapt_delta=0.95, 
                        seed = sample.int(.Machine$integer.max, 1))
   
   
@@ -164,7 +164,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
       run = runindex
     )
   
-  draws_preds = fit$draws(c('next_gens', 'forecast_gens', 'infections')) %>%
+  draws_preds = fit$draws(c('next_gens', 'forecast_gens')) %>%
     posterior::as_draws_df() %>%
     dplyr::as_tibble() %>%
     dplyr::mutate(sample = 1:dplyr::n()) %>%
