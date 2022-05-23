@@ -36,14 +36,13 @@ parameters {
   //parameters to fit
   real <lower=0, upper=1> inf_rate_hyper_mu;  // hyper prior mean for inf rate
   real <lower=0> inf_rate_hyper_sd;           // hyper prior sd for inf rate
+  
   real <lower=0, upper=1> suscept_hyper_mu;   // hyper prior mean for susceptibility
   real <lower=0> suscept_hyper_sd;            // hyper prior sd for susceptibility
+  
   matrix<lower=0>[A,A] contact_matrices[W];   // contact matrices - Q pof
   real inf_prime[A];
   real sus_prime[A];
-  //real<lower=0,upper=1> inf_rate[A];        // age specific rate of infection conditional on contact with 100% susceptibility
-  //real<lower=0,upper=1> susceptibility[A];  // age specific susceptibility 
-  real<lower=0,upper=1> ab_protection;        // protection offered by antibodies
 
   real<lower=0> w_mu; 
   real<lower=0> w_sig;
@@ -66,17 +65,12 @@ transformed parameters{
   real<lower=0> combined_sigma_mca[contact_option == 2 ? W : 0, contact_option == 2 ? A : 0];
   real<lower=0> combined_sigma_mc[contact_option == 3 ? W : 0];
   
-  //real<lower=0> w_alpha; 
-  //real<lower=0> w_beta;
-  
   
   // inf and susc vectors are calculated from the hyper parameters and unique offset parameter under NCP framework
   for(a in 1:A){
     inf_rate[a] = inf_rate_hyper_mu + inf_rate_hyper_sd * inf_prime[a];
     susceptibility[a] = suscept_hyper_mu + suscept_hyper_sd * sus_prime[a];
   }
-  
-  
   
   // calculate contact matrix weighted by the population distribution to maintain reciprocity
   for( w in 1:W){
@@ -85,9 +79,7 @@ transformed parameters{
           if (ai <= aj) contact_matrices_aug[w, ai, aj] = contact_matrices[w, ai, aj] * population[ai];
           else contact_matrices_aug[w, ai, aj] = contact_matrices[w, aj, ai] * population[ai];
     }}}
-  
-  //w_alpha = ((w_mu+0.0001)/(w_sig+0.0001))^2;
-  //w_beta  = (w_mu+0.0001)/((w_sig+0.0001)^2);
+
   
   for(s in 1:smax){
     w_g[s] = lognormal_cdf(s, w_mu, w_sig) - lognormal_cdf(s-1, w_mu, w_sig);
@@ -96,8 +88,6 @@ transformed parameters{
     w_g[s] = w_g[s]/sum(w_g);
   }
 
-  
-  
   for(w in 1:W){
     if(contact_option==1){
       for(a in 1:A){
@@ -119,9 +109,6 @@ transformed parameters{
     }
 }
     
-
-
-
 
 model {
   

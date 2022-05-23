@@ -70,9 +70,9 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
     anb_matrix_sd_inp = anb_matrix_sd[,-'date']
   }
   else{
-    inf_matrix_sd_inp = NULL
-    anb_matrix_sd_inp = NULL
-    anb_matrix_sd_inp = NULL
+    inf_matrix_sd_inp = 0
+    anb_matrix_sd_inp = 0
+    anb_matrix_sd_inp = 0
   }
   
   data = list( 

@@ -1,4 +1,5 @@
 library(data.table)
+library(ggplot2)
 
 case_data = fread(file = '../nation_2022-05-10.csv')
 
@@ -27,6 +28,7 @@ ggplot(case_data_age_groups) +
 
 
 
+
 case_matrix_mean  = dcast(case_data_age_groups, value.var = 'rolling_cases', date ~ age_group)
 
 case_matrix_mean[, date := lubridate::ymd(date)]
@@ -36,8 +38,8 @@ cms_cases = readRDS('cms_cases.rds')
 age_mod_cases = cmdstan_model('stan/multi-option-contact-model-cases.stan')
 
 
-fit = fit_NGM_model_for_date_range(
-  end_date = dates[[10]],
+fit = fit_NGM_model_for_date_range_cases(
+  end_date = dates[[6]],
   age_model = age_mod_cases,
   period = period+smax, 
   inf_matrix_mean = case_matrix_mean, 
@@ -54,7 +56,7 @@ fit = fit_NGM_model_for_date_range(
 )
 
 
-summary_preds = data.table(summary_preds)
+summary_preds = data.table(fit$summary_preds)
 summary_preds[, age_group := age_groups[age_index]]
 summary_preds[, date := forecast_date - 49 + time_index]
 summary_preds = merge(summary_preds, actualest_inc_long, by=c('date', 'age_group'), all.x = TRUE)
