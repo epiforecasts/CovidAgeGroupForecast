@@ -10,10 +10,7 @@ data {
   
   matrix[A,A] contact_matrices_mu [W];      // contact matricies means
   matrix[A,A] contact_matrices_sd [W];      // contact matricies means
-  real mean_contacts_mu[W,A];
-  real mean_contacts_sd[W,A];
-  real mean_contacts_mu_mat[W];
-  real mean_contacts_sd_mat[W];
+
   
   int day_to_week_converter[T];             // id vector to determine which cm to use for each day
   
@@ -24,8 +21,6 @@ data {
   int<lower=0> contact_option;              // 1-full matrices, 2-age-group means, 3-overall means, 4-no contact data.
   int<lower=0> sigma_option;                // 1-fit sd, 2-fit (pseudo) COV [COV normalised by the mean input infections as opposed to the fit value]
   
-  //real<lower=0> w_g[smax];                // weights - generation interval distribution
-
 }
 
 
@@ -50,8 +45,6 @@ parameters {
   real<lower=0> sigma_inf;                    // uncertainty in model
   
   real<lower=0> sigma_cm;
-  real<lower=0> sigma_mca[A];
-  real<lower=0> sigma_mc;
 
 }
 
@@ -61,9 +54,8 @@ transformed parameters{
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
   
-  real<lower=0> combined_sigma_cm[contact_option == 1 ? W : 0, contact_option == 1 ? A : 0,  contact_option == 1 ? A : 0];
-  real<lower=0> combined_sigma_mca[contact_option == 2 ? W : 0, contact_option == 2 ? A : 0];
-  real<lower=0> combined_sigma_mc[contact_option == 3 ? W : 0];
+  real<lower=0> combined_sigma_cm[W, A, A ];
+
   
   
   // inf and susc vectors are calculated from the hyper parameters and unique offset parameter under NCP framework
@@ -89,7 +81,6 @@ transformed parameters{
   }
 
   for(w in 1:W){
-    if(contact_option==1){
       for(a in 1:A){
         for(b in 1:A){
           combined_sigma_cm[w,a,b] = sqrt(sigma_cm^2 + contact_matrices_sd[w,a,b]^2);
@@ -97,16 +88,6 @@ transformed parameters{
       }
     }
     
-    if(contact_option==2){
-      for(a in 1:A){
-        combined_sigma_mca[w,a] = sqrt(sigma_mca[a]^2 + mean_contacts_sd[w,a]^2);
-      }
-    }
-    
-    if(contact_option==3){
-      combined_sigma_mc[w] = sqrt(sigma_mc^2 + mean_contacts_sd_mat[w]^2);
-    }
-    }
 }
     
 
@@ -129,83 +110,38 @@ model {
   w_mu ~ normal(5, 1)T[0,];
   w_sig ~ normal(1.7, 0.17)T[0,];
   
-  sigma_inf ~ normal(0.005, 0.0025) T[0,];
+  sigma_inf ~ normal(0.05, 0.01) T[0,];
   
   for(ai in 1:A){
    for(aj in 1:A){
-    sigma_cm ~ normal(0.005, 0.0025) T[0,]; 
+    sigma_cm ~ normal(0.05, 0.01) T[0,]; 
    }
   }
   
-  for(a in 1:A){
-    sigma_mca[a] ~ normal(0.005, 0.0025) T[0,]; 
-  }
-  
-  sigma_mc ~ normal(0.005, 0.0025) T[0,];
+
+
 
   
   
-  
-  if (contact_option==1){
+
     // prior for symetric contact matrix using full data 
     
-          for(w in 1:W){
-            for(ai in 1:A){
-              for(aj in 1:A){
-                contact_matrices[w, ai, aj] ~ gamma(2,2);
-                target += normal_lpdf(contact_matrices_mu[w, ai, aj] | contact_matrices[w, ai, aj], combined_sigma_cm[w,ai,aj]);
-          }}}
-  
-  }
-  
-    else if (contact_option==2){
-      // prior for symetric contact matrix using only age band means
-          for(w in 1:W){
-            for(ai in 1:A){
-              for(aj in 1:A){
-            
-            contact_matrices[w, ai, aj] ~ gamma(2,2);
-          }}
-          mean_conts[w] = ones * contact_matrices_aug[w];
-          target += normal_lpdf(mean_contacts_mu[w] | to_array_1d(mean_conts[w]), combined_sigma_mca[w]);
-
-    
-    
-  }
-}
-    
-  else if (contact_option==3){
-    // prior for symetric contact matrix using overall means
-            for(w in 1:W){
-              for(ai in 1:A){
-                for(aj in 1:A){
-              
-                    contact_matrices[w, ai, aj] ~ gamma(2,2);
-                    }}
-              
-            
-              mean_conts[w] = ones * contact_matrices_aug[w];
-              mat_mean[w] = mean(to_array_1d(mean_conts[w]));
-              target += normal_lpdf(mean_contacts_mu_mat[w] | mat_mean[w], combined_sigma_mc[w]);
-
-              }
-  }
-  
-  else if (contact_option==4){
-    // prior for symetric contact matrix using no contact data
-      for(w in 1:W){
-        for(ai in 1:A){
-          for(aj in 1:A){
-        
+  for(w in 1:W){
+    for(ai in 1:A){
+      for(aj in 1:A){
         contact_matrices[w, ai, aj] ~ gamma(2,2);
-      }}}
-      
-  }
+        target += normal_lpdf(contact_matrices_mu[w, ai, aj] | contact_matrices[w, ai, aj], combined_sigma_cm[w,ai,aj]);
+  }}}
+  
+  
+  
+
+  
   
   // prior for age-specific susc and inf offset in NCP framework
   for(a in 1:A){
-    inf_prime[a] ~ normal(0,0.1);
-    sus_prime[a] ~ normal(0,0.1);
+    inf_prime[a] ~ normal(0,1);
+    sus_prime[a] ~ normal(0,1);
     }
   
   for(t in 1:T){
@@ -225,7 +161,7 @@ model {
     
     // sampling statement for calculated infections vs modelled infections
     for(a in 1:A){
-          target += normal_lpdf(cases[t,a] | next_gens[t][a], sigma_inf);
+          target += normal_lpdf(cases[t,a] | next_gens[t][a], next_gens[t][a]*sigma_inf);
 
     }
       
