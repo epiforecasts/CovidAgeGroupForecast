@@ -17,7 +17,9 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
                                         pops = tail(population, -1), 
                                         runindex=1, 
                                         contact_option=1, 
-                                        sigma_option=1
+                                        sigma_option=1, 
+                                        contact_delay=0, 
+                                        forecast_horizon=10
 ){
   
   # set the end and start dates as date objects
@@ -32,17 +34,20 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
       anb_matrix_sd = anb_matrix_sd[date < end_date & date > start_date]
   
   }
-  inf_matrix_mean[, sr := cut(date, breaks=c(sr_dates$min_date, max(sr_dates$max_date)), labels = sort(sr_dates$survey_round) )]
+  inf_matrix_mean[, sr := cut(date-contact_delay, breaks=c(sr_dates$min_date, max(sr_dates$max_date)), labels = sort(sr_dates$survey_round) )]
   
   sr_dates = sr_dates[survey_round %in% inf_matrix_mean$sr]
   # create vector to indicate correct contact matrix
   day_to_week = as.numeric(inf_matrix_mean$sr)
   day_to_week = day_to_week - min(day_to_week) + 1
   
+  day_to_week = as.numeric(factor(day_to_week,levels=unique(day_to_week)))
+  
   A = dim(inf_matrix_mean[,-c('date', 'sr')])[2]
   
   # load contact matrices into list
   contact_matrices = lapply(X=sort(unique(sr_dates$survey_round)), function(X){t(matrix(cms[sr==X]$cms, nrow=A))})
+  
   
   # calculate symmetric contact matrix means and SD from samples
   contact_matrices_mu = lapply(X=sort(unique(sr_dates$survey_round)), function(X){t(matrix(cms[sr==X]$cms, nrow=A))/pops$props})
@@ -56,10 +61,6 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
   mean_contacts_mu_mat = sapply(mean_contacts_mu, mean)
   mean_contacts_sd_mat = sapply(mean_contacts_sd, mean)
   
-  # set max generation interval and weights for generation interval distribution
-  smax = 20
-  weights = dgamma(1:20, 10, 1.7 )
-  weights = weights/sum(weights)
   
   # construct data object for stan unput
   inf_matrix_mean_inp = inf_matrix_mean[,-c('date', 'sr')]
@@ -91,7 +92,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
     mean_contacts_sd_mat = mean_contacts_sd_mat, 
     smax=smax, 
     w_g = weights, 
-    horizon=10, 
+    horizon=forecast_horizon, 
     contact_option=contact_option, 
     sigma_option=sigma_option
   )
@@ -104,7 +105,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
                        iter_sampling=250, 
                        chains=1, 
                        max_treedepth = 12, 
-                       adapt_delta=0.95, 
+                       adapt_delta=0.8, 
                        seed = sample.int(.Machine$integer.max, 1))
   
   

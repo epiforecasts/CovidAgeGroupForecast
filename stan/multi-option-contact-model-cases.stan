@@ -1,9 +1,9 @@
 
 data {
   
-  int<lower=0> T;                           //number of days in time-series
-  int<lower=0> W;                           //number of weeks
-  int<lower=0> A;                           //age groups
+  int<lower=0> T;                           //number of timepoints in infection timeseries
+  int<lower=0> W;                           //number of survey rounds in contact data
+  int<lower=0> A;                           //number of age groups
 
   real cases[T,A];                         // infections parameter matrix
 
@@ -49,7 +49,7 @@ parameters {
   
   real<lower=0> sigma_inf;                    // uncertainty in model
   
-  matrix<lower=0>[A,A] sigma_cm;
+  real<lower=0> sigma_cm;
   real<lower=0> sigma_mca[A];
   real<lower=0> sigma_mc;
 
@@ -92,7 +92,7 @@ transformed parameters{
     if(contact_option==1){
       for(a in 1:A){
         for(b in 1:A){
-          combined_sigma_cm[w,a,b] = sqrt(sigma_cm[a,b]^2 + contact_matrices_sd[w,a,b]^2);
+          combined_sigma_cm[w,a,b] = sqrt(sigma_cm^2 + contact_matrices_sd[w,a,b]^2);
         }
       }
     }
@@ -133,7 +133,7 @@ model {
   
   for(ai in 1:A){
    for(aj in 1:A){
-    sigma_cm[ai,aj] ~ normal(0.005, 0.0025) T[0,]; 
+    sigma_cm ~ normal(0.005, 0.0025) T[0,]; 
    }
   }
   
@@ -213,7 +213,7 @@ model {
     full_susceptibility[t] = to_vector(susceptibility);
     
     // construct matrix to correct contact matrix to NGM
-    if(t>20){
+    if(t>smax){
     
     // calculate contribution for infections at t from dates between t-smax and t based on weights w_g
     for(s in 1:smax){
@@ -262,7 +262,7 @@ generated quantities{
     full_susceptibility[t] = to_vector(susceptibility) ;
     
     // construct matrix to correct contact matrix to NGM
-    if(t>20){
+    if(t>smax){
     
     for(s in 1:smax){
         next_gens_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility[t]) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(cases[t-s]));
