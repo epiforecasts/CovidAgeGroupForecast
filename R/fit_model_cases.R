@@ -27,11 +27,11 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
   start_date = end_date - period
   
   # filter matrices to correct dates
-  inf_matrix_mean = inf_matrix_mean[date < end_date & date > start_date]
+  inf_matrix_mean = inf_matrix_mean[date <= end_date & date >= start_date]
   if (!is.null(inf_matrix_sd)){
-      inf_matrix_sd = inf_matrix_sd[date < end_date & date > start_date]
-      anb_matrix_mean = anb_matrix_mean[date < end_date & date > start_date]
-      anb_matrix_sd = anb_matrix_sd[date < end_date & date > start_date]
+      inf_matrix_sd = inf_matrix_sd[date <= end_date & date <= start_date]
+      anb_matrix_mean = anb_matrix_mean[date <= end_date & date <= start_date]
+      anb_matrix_sd = anb_matrix_sd[date <= end_date & date <= start_date]
   
   }
   inf_matrix_mean[, sr := cut(date-contact_delay, breaks=c(sr_dates$min_date, max(sr_dates$max_date)), labels = sort(sr_dates$survey_round) )]
@@ -91,7 +91,6 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
     mean_contacts_mu_mat = mean_contacts_mu_mat,
     mean_contacts_sd_mat = mean_contacts_sd_mat, 
     smax=smax, 
-    w_g = weights, 
     horizon=forecast_horizon, 
     contact_option=contact_option, 
     sigma_option=sigma_option
