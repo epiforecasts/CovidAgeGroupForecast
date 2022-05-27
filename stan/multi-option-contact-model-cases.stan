@@ -129,19 +129,19 @@ model {
   w_mu ~ normal(5, 1)T[0,];
   w_sig ~ normal(1.7, 0.17)T[0,];
   
-  sigma_inf ~ normal(0.005, 0.0025) T[0,];
+  sigma_inf ~ normal(0.05, 0.01) T[0,];
   
   for(ai in 1:A){
    for(aj in 1:A){
-    sigma_cm ~ normal(0.005, 0.0025) T[0,]; 
+    sigma_cm ~ normal(0.05, 0.01) T[0,]; 
    }
   }
   
   for(a in 1:A){
-    sigma_mca[a] ~ normal(0.005, 0.0025) T[0,]; 
+    sigma_mca[a] ~ normal(0.05, 0.01)  T[0,]; 
   }
   
-  sigma_mc ~ normal(0.005, 0.0025) T[0,];
+  sigma_mc ~ normal(0.05, 0.01) T[0,];
 
   
   
@@ -204,8 +204,8 @@ model {
   
   // prior for age-specific susc and inf offset in NCP framework
   for(a in 1:A){
-    inf_prime[a] ~ normal(0,0.1);
-    sus_prime[a] ~ normal(0,0.1);
+    inf_prime[a] ~ normal(0,1);
+    sus_prime[a] ~ normal(0,1);
     }
   
   for(t in 1:T){
@@ -225,7 +225,7 @@ model {
     
     // sampling statement for calculated infections vs modelled infections
     for(a in 1:A){
-          target += normal_lpdf(cases[t,a] | next_gens[t][a], sigma_inf);
+          target += normal_lpdf(cases[t,a] | next_gens[t][a], next_gens[t][a] * sigma_inf);
 
     }
       

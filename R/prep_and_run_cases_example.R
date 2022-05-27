@@ -36,8 +36,10 @@ case_matrix_mean[, date := lubridate::ymd(date)]
 cms_cases = readRDS('cms_cases.rds')
 
 age_mod_cases = cmdstan_model('stan/multi-option-contact-model-cases.stan')
-period = 15 
+period = 30 
 smax = 15
+
+fdate = dates[[6]]
 
 fit = fit_NGM_model_for_date_range_cases(
   end_date = dates[[6]],
@@ -55,6 +57,7 @@ fit = fit_NGM_model_for_date_range_cases(
   contact_option = 1,
   sigma_option = 1, 
   contact_delay = 5
+ 
 )
 
 
@@ -69,3 +72,32 @@ ggplot(case_data_age_groups[date>dates[[6]] & date <dates[[6]]+10, ]) +
   geom_ribbon(data=summary_preds[name=='forecast_gens'], aes(x=date, ymin=`5%`, ymax=`95%`, fill=age_group), alpha=0.2)+
   geom_line(data = summary_preds[time_index>20 & time_index<50 & name=='next_gens'], 
             aes(x=date, y=`50%`, color=age_group), alpha=0.8)
+
+
+summary_preds = data.table(fit$summary_preds)
+summary_preds[, age_group := age_groups[age_index]]
+summary_preds[, date := forecast_date - (period+smax) + (time_index-1)]
+#summary_preds = merge(summary_preds, actualest_inc_long, by=c('date', 'age_group'), all.x = TRUE)
+
+ggplot(case_data_age_groups[date > fdate-40 & date < fdate + 10]) +
+  geom_line(aes(x=date, y=rolling_cases, color=age_group))+
+  geom_point(data=summary_preds[ name=='forecast_gens'], aes(x=date, y=`50%`, color=age_group), alpha=0.8)+ 
+  geom_ribbon(data=summary_preds[name=='forecast_gens'], aes(x=date, ymin=`5%`, ymax=`95%`, fill=age_group), alpha=0.2)+
+  geom_line(data = summary_preds[time_index>smax & name=='next_gens'], 
+            aes(x=date, y=`50%`, color=age_group), alpha=0.8)+
+  
+  geom_ribbon(data = summary_preds[time_index>smax & name=='next_gens'], 
+              aes(x=date, ymin=`5%`, ymax=`95%`, fill=age_group), alpha=0.3)+
+  geom_vline(xintercept = fdate) + 
+  facet_wrap(~age_group)
+
+
+ggplot()+
+  geom_point(data=summary_preds[ name=='forecast_gens'], aes(x=date, y=`50%`, color=age_group), alpha=0.8)+ 
+  geom_ribbon(data=summary_preds[name=='forecast_gens'], aes(x=date, ymin=`5%`, ymax=`95%`, fill=age_group), alpha=0.2)+
+  geom_line(data = summary_preds[time_index>smax & name=='next_gens'], 
+            aes(x=date, y=`50%`, color=age_group), alpha=0.8)+
+  geom_ribbon(data = summary_preds[time_index>smax & name=='next_gens'], 
+              aes(x=date, ymin=`5%`, ymax=`95%`, fill=age_group), alpha=0.3)
+
+  
