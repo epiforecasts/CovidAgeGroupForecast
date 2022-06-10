@@ -91,6 +91,16 @@ transformed parameters{
           if (ai <= aj) contact_matrices_aug[w, ai, aj] = contact_matrices[w, ai, aj] * population[ai];
           else contact_matrices_aug[w, ai, aj] = contact_matrices[w, aj, ai] * population[ai];
     }}}
+    
+  if(contact_option==5){
+      for( w in 1:W){
+        for(ai in 1:A){
+          for(aj in 1:A){
+            if (ai <= aj) contact_matrices_aug[w, ai, aj] = (contact_matrices[w, ai, aj] * population[ai]) .* diag_matrix(rep_vector(1,A))[ai, aj];
+            else contact_matrices_aug[w, ai, aj] = (contact_matrices[w, aj, ai] * population[ai]) .*  diag_matrix(rep_vector(1,A))[ai, aj];
+    }}}
+      
+    }
   
   //w_alpha = ((w_mu+0.0001)/(w_sig+0.0001))^2;
   //w_beta  = (w_mu+0.0001)/((w_sig+0.0001)^2);
@@ -240,6 +250,17 @@ model {
       
   }
   
+    else if (contact_option==5){
+    // prior for symetric contact matrix using no contact data
+      for(w in 1:W){
+        for(ai in 1:A){
+          for(aj in 1:A){
+        
+        contact_matrices[w, ai, aj] ~ gamma(2,2);
+      }}}
+      
+  }
+  
   // prior for age-specific susc and inf offset in NCP framework
   for(a in 1:A){
     inf_prime[a] ~ normal(0,1);
@@ -264,7 +285,7 @@ model {
     full_susceptibility[t] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection ));
     
     // construct matrix to correct contact matrix to NGM
-    if(t>20){
+    if(t>smax){
     
     // calculate contribution for infections at t from dates between t-smax and t based on weights w_g
     for(s in 1:smax){
@@ -313,7 +334,7 @@ generated quantities{
     full_susceptibility[t] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection ));
     
     // construct matrix to correct contact matrix to NGM
-    if(t>20){
+    if(t>smax){
     
     for(s in 1:smax){
         next_gens_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility[t]) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-s]));

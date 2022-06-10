@@ -79,6 +79,16 @@ transformed parameters{
           if (ai <= aj) contact_matrices_aug[w, ai, aj] = contact_matrices[w, ai, aj] * population[ai];
           else contact_matrices_aug[w, ai, aj] = contact_matrices[w, aj, ai] * population[ai];
     }}}
+    
+    if(contact_option==5){
+      for( w in 1:W){
+        for(ai in 1:A){
+          for(aj in 1:A){
+            if (ai <= aj) contact_matrices_aug[w, ai, aj] = (contact_matrices[w, ai, aj] * population[ai]).* diag_matrix(rep_vector(1,A))[ai, aj];
+            else contact_matrices_aug[w, ai, aj] = (contact_matrices[w, aj, ai] * population[ai]) .*  diag_matrix(rep_vector(1,A))[ai, aj];
+    }}}
+      
+    }
 
   
   for(s in 1:smax){
@@ -106,6 +116,8 @@ transformed parameters{
     if(contact_option==3){
       combined_sigma_mc[w] = sqrt(sigma_mc^2 + mean_contacts_sd_mat[w]^2);
     }
+    
+    
     }
 }
     
@@ -199,8 +211,20 @@ model {
         
         contact_matrices[w, ai, aj] ~ gamma(2,2);
       }}}
+  }
+  
+  
+    else if (contact_option==5){
+    // prior for symetric contact matrix using no contact data
+      for(w in 1:W){
+        for(ai in 1:A){
+          for(aj in 1:A){
+        
+        contact_matrices[w, ai, aj] ~ gamma(2,2);
+      }}}
       
   }
+  
   
   // prior for age-specific susc and inf offset in NCP framework
   for(a in 1:A){

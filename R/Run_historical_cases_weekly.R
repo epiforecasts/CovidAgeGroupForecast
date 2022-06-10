@@ -9,54 +9,21 @@ library(future)
 library(cmdstanr)
 library(cowplot)
 
-source('R/fit_model.R')
+source('R/fit_model_cases.R')
 source('R/plotting.R')
+source('R/make_case_weekly.R')
+source('R/get_polymod_cms.R')
+source('R/generate_baselines.R')
 library(patchwork)
 
+weekly_cases = make_case_weekly()
 
-case_data = fread(file = '../nation_2022-05-10.csv')
-
-select_age_groups = c("00_04",  "05_09", "10_14",  "15_19", "20_24", "25_29", "30_34", "35_39", "40_44", "45_49", "50_54", "55_59", "60_64", "65_69", "70_74", "75_79", "80_84", "85_89", "90+")
-
-
-case_data_ages = case_data[age %in% select_age_groups, ]
-
-
-
-case_data_ages[, lower_age := as.integer(substr(age, 1, 2))]
-case_data_ages[, upper_age := as.integer(substr(age, 4, 5))]
-
-case_data_ages[ is.na(upper_age), upper_age := 90]
+case_data_age_groups = weekly_cases[[1]]
+case_estimates = weekly_cases[[2]]
 
 breaks = c(c(0),seq(9,69, 10), c(Inf))
-case_data_ages[, age_group := cut(upper_age, breaks)]
 
-age_groups = unique(cut(1:120, breaks))
-
-select_dates = seq(as.Date('2020-01-31'), as.Date('2022-01-01'), 7)
-
-case_data_ages = case_data_ages[ date %in% select_dates, ]
-
-
-case_data_ages[, rolling_cases := sum(rollingSum), by = c('age_group', 'date') ]
-
-case_data_age_groups = unique(case_data_ages[,c('areaCode', 'areaName', 'areaType', 'date', 'age_group', 'rolling_cases')])
-
-case_estimates = data.table(
-  date = as.Date(case_data_age_groups$date), 
-  variable = case_data_age_groups$age_group, 
-  q5  = case_data_age_groups$rolling_cases, 
-  q10 = case_data_age_groups$rolling_cases, 
-  q25 = case_data_age_groups$rolling_cases, 
-  q50 = case_data_age_groups$rolling_cases, 
-  q75 = case_data_age_groups$rolling_cases, 
-  q90 = case_data_age_groups$rolling_cases, 
-  q95 = case_data_age_groups$rolling_cases)
-
-ggplot(case_data_age_groups) +
-  geom_point(aes(x=date, y=rolling_cases, color=age_group))
-
-
+age_groups = c('0-9',  '10-19',   '20-29',  '30-39',  '40-49',  '50-59',  '60-69', '70+')
 
 
 case_matrix_mean  = dcast(case_data_age_groups, value.var = 'rolling_cases', date ~ age_group)
@@ -75,7 +42,7 @@ dates = seq(as.Date("2020-11-27"), as.Date('2021-12-02'), 14)
 
 plan(callr, workers = future::availableCores()-1)
 all_est = list()
-for(r in 1:4){ 
+for(r in 1:5){ 
   print(paste0('running model ', r))
   est <- future_lapply(
     dates, fit_NGM_model_for_date_range_cases,
@@ -101,6 +68,29 @@ for(r in 1:4){
   
 }
 
+cms_pmd = get_polymod_cms(breaks)
+
+est <- future_lapply(
+  dates, fit_NGM_model_for_date_range_cases,
+  age_mod = age_mod_cases,
+  period = period+smax*7, 
+  smax = smax,
+  inf_matrix_mean = case_matrix_mean, 
+  inf_matrix_sd = NULL, 
+  anb_matrix_mean = NULL, 
+  anb_matrix_sd = NULL, 
+  cms = cms_pmd, 
+  pops = readRDS('population_cases.rds'),
+  runindex = 6, 
+  quantiles=c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), 
+  contact_option=1,
+  sigma_option=1,
+  contact_delay = 5, 
+  forecast_horizon = 4,
+  future.seed=TRUE
+)
+
+all_est = append(all_est, est)
 
 
 # combine the outputs from all dates into one container
@@ -113,6 +103,19 @@ summary_preds = data.table()
 for(i in 1:length(all_est)){
   summary_preds = rbind(summary_preds, data.table(all_est[[i]]$summary_preds))
 }
+
+samples_preds = data.table()
+for(i in 1:length(all_est)){
+  samples_preds = rbind(samples_preds, data.table(all_est[[i]]$samples_preds))
+}
+
+
+samples_preds[, date := forecast_date - (period+smax*7) + (time_index-1)*7]
+samples_preds[, age_group := age_groups[age_index]]
+# merge with time series of median infection estimates 
+samples_preds = merge(samples_preds, actualest_inc_long[,  true_value := value][,-c('value')], by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x = T, all.y = F )
+
+# calculate baseline
 
 # set dates and age groups based on time age index
 summary_preds[, date := forecast_date - (period+smax*7) + (time_index-1)*7]
@@ -151,6 +154,53 @@ saveRDS(summary_pars,  'outputs/summary_pars_cases.rds')
 saveRDS(summary_preds, 'outputs/summary_preds_cases.rds')
 saveRDS(summary_conts, 'outputs/summary_conts_cases.rds')
 
-summary_scores = score_forecasts(summary_preds[date > as.Date('2020-10-01')], pandemic_periods, suffix = '_cases')
+
+
+summary_scores = score_forecasts(summary_preds[date > as.Date('2020-10-01') & !(run %in% c(2,3)) & run != 'baseline_linex_lv'], 
+                                 pandemic_periods, 
+                                 suffix = '_cases', 
+                                 labels = c('Full contact model', 
+                                            'No contact data', 
+                                            'Polymod data',
+                                            'No interaction',
+                                            'Exponential baseline', 
+                                            'Fixed value baseline', 
+                                            'Linear baseline'), 
+                                age_groups = age_groups)
+
+overall_scores = summary_scores$score_overall[,c('model', 'interval_score', 'aem', 'bias')]
+
+overall_scores[, model := c('Full contact model', 
+                            'No contact data', 
+                            'No interaction',
+                            'Polymod data', 
+                            'Exponential baseline', 
+                            'Fixed value baseline')]
+
+
+age_scores = summary_scores$score_by_age[,c('model', 'age_group', 'interval_score_rel', 'aem_rel', 'bias')]
+
+
+
+ggplot(age_scores[model != 'baseline_linex_lv',]) +
+  geom_segment(aes(x=model, xend=model, y=1, yend=interval_score_rel), alpha=0.3)+
+  geom_point(aes(x=model, y=interval_score_rel, color=model))+
+  geom_hline(yintercept = 1)+
+  scale_y_continuous(trans='log2', name='Interval Score')+
+  scale_x_discrete(labels=NULL, name='')+
+  scale_color_discrete(labels=c('Full contact model', 
+                                'No contact data', 
+                                'No interaction',
+                                'Polymod data', 
+                                'Exponential baseline', 
+                                'Fixed value baseline'), 
+                       name = 'Model')+
+  facet_wrap(~age_group, nrow=1)+
+  theme_minimal()+
+  theme(
+    axis.text.x = element_text(angle=90), 
+    legend.position = 'bottom'
+  )
+
 
 plot_parameters(summary_pars, d, '_cases')

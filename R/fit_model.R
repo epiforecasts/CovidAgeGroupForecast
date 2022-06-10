@@ -17,7 +17,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
                                         pops = tail(population, -1), 
                                         runindex=1, 
                                         contact_option=1, 
-                                        sigma_option=1
+                                        sigma_option=1, 
+                                        forecast_horizon
 ){
   
   # set the end and start dates as date objects
@@ -25,11 +26,11 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
   start_date = end_date - period
   
   # filter matrices to correct dates
-  inf_matrix_mean = inf_matrix_mean[date < end_date & date > start_date]
+  inf_matrix_mean = inf_matrix_mean[date <= end_date & date >= start_date]
   if (!is.null(inf_matrix_sd)){
-      inf_matrix_sd = inf_matrix_sd[date < end_date & date > start_date]
-      anb_matrix_mean = anb_matrix_mean[date < end_date & date > start_date]
-      anb_matrix_sd = anb_matrix_sd[date < end_date & date > start_date]
+      inf_matrix_sd = inf_matrix_sd[date <= end_date & date >= start_date]
+      anb_matrix_mean = anb_matrix_mean[date <= end_date & date >= start_date]
+      anb_matrix_sd = anb_matrix_sd[date <= end_date & date >= start_date]
   
   }
   inf_matrix_mean[, sr := cut(date, breaks=c(sr_dates$min_date, max(sr_dates$max_date)), labels = sort(sr_dates$survey_round) )]
@@ -38,6 +39,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
   # create vector to indicate correct contact matrix
   day_to_week = as.numeric(inf_matrix_mean$sr)
   day_to_week = day_to_week - min(day_to_week) + 1
+  
+  day_to_week = as.numeric(factor(day_to_week,levels=unique(day_to_week)))
   
   A = dim(inf_matrix_mean[,-c('date', 'sr')])[2]
   
@@ -56,11 +59,7 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
   mean_contacts_mu_mat = sapply(mean_contacts_mu, mean)
   mean_contacts_sd_mat = sapply(mean_contacts_sd, mean)
   
-  # set max generation interval and weights for generation interval distribution
-  smax = 20
-  weights = dgamma(1:20, 10, 1.7 )
-  weights = weights/sum(weights)
-  
+
   # construct data object for stan unput
   inf_matrix_mean_inp = inf_matrix_mean[,-c('date', 'sr')]
   if(!is.null(inf_matrix_sd)){ 
@@ -93,9 +92,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
     mean_contacts_sd = mean_contacts_sd, 
     mean_contacts_mu_mat = mean_contacts_mu_mat,
     mean_contacts_sd_mat = mean_contacts_sd_mat, 
-    smax=smax, 
-    w_g = weights, 
-    horizon=10, 
+    smax=smax,
+    horizon=forecast_horizon, 
     contact_option=contact_option, 
     sigma_option=sigma_option
   )
