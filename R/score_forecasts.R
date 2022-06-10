@@ -31,9 +31,15 @@ pandemic_periods = data.table(
 
 
 # function to score forecasts based on single 'true' time series of infections
-score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
+score_forecasts = function(summary_preds, pandemic_periods, suffix='', age_groups, 
+                           labels=c('Full contact data', 
+                                    'Age-group means', 
+                                    'Overall means', 
+                                    'No contact data',  
+                                    'Baseline - last generation value', 
+                                    'Baseline - linear extrapolation')) {
   
-  preds_long = melt(summary_preds[name=='forecast_gens'], 
+  preds_long = melt(summary_preds[name=='forecast_gens'& date > forecast_date,], 
                     id.vars = c('date', 'age_group', 'name', 'age_index', 'time_index', 'age_index', 'forecast_date', 'run', 'value'), 
                     measure.vars = c('5%',  '10%', '25%',     '50%',   '75%', '90%',     '95%'), value.name = 'prediction', variable.name = 'quantile_chr')
   
@@ -61,8 +67,8 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
   score_by_fd = scoringutils::eval_forecasts(preds_to_score, 
                                              summarise_by = c("model", "value_date"))
   
-  score_by_fd_long = melt(score_by_fd, id.vars = c('model', 'value_date'), measure.vars = c('interval_score', 'bias', 'aem'), value.name = 'score', variable.name = 'score_type')
-  score_by_age_long = melt(score_by_age, id.vars = c('model', 'age_index', 'periods'), measure.vars = c('interval_score', 'bias', 'aem'), value.name = 'score', variable.name = 'score_type')
+  score_by_fd_long = melt(score_by_fd, id.vars = c('model', 'value_date'), measure.vars = c('interval_score', 'aem'), value.name = 'score', variable.name = 'score_type')
+  score_by_age_long = melt(score_by_age, id.vars = c('model', 'age_index', 'periods'), measure.vars = c('interval_score',  'aem'), value.name = 'score', variable.name = 'score_type')
   
   
   p1 =
@@ -70,7 +76,7 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
     geom_point(aes(x=value_date, y=score, color=model))+
     geom_line(aes(x=value_date, y=score, color=model), linetype='dashed')+
     facet_wrap(~score_type, ncol=1, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score', 'bias', 'aem'))))+
-    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data',  'Baseline - last generation value', 'Baseline - linear extrapolation'))+
+    scale_color_discrete(name='model', labels=labels)+
     scale_x_date(name='')+
     theme_minimal_hgrid()
   
@@ -86,8 +92,8 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
     geom_point(aes(x=age_index, y=score, color=model))+
     geom_line(aes(x=age_index, y=score, color=model), linetype='dashed')+
     facet_grid(score_type~periods, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score', 'bias', 'aem'))))+
-    scale_color_discrete(name='model', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data',  'Baseline - last generation value', 'Baseline - linear extrapolation'))+
-    scale_x_continuous(name='age group', breaks = 1:length(age_groups), labels = age_groups, )+
+    scale_color_discrete(name='model', labels=labels)+
+    scale_x_continuous(name='age group', breaks = 1:length(age_groups), labels = age_groups, )
     theme_minimal_hgrid()+
     theme(
       axis.text.x=element_text(angle=90)
@@ -98,7 +104,7 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
   
   
   # calculate scores aggregated by age and pandemic period relative to baseline model
-  score_by_age_rel = merge(score_by_age, score_by_age[model=='baseline_linex_lv', ], by = c('age_index','periods'), suffixes = c('', '_baseline'))
+  score_by_age_rel = merge(score_by_age, score_by_age[model=='baseline_expex_lv', ], by = c('age_index','periods'), suffixes = c('', '_baseline'))
   score_by_age_rel[,
                    c(
                      'interval_score_rel',
@@ -115,7 +121,7 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
   
   
   # calculate scores aggregated by forecast date relative to baseline model
-  score_by_fd_rel = merge(score_by_fd, score_by_fd[model=='baseline_linex_lv', ], by = c('value_date'), suffixes = c('', '_baseline'))
+  score_by_fd_rel = merge(score_by_fd, score_by_fd[model=='baseline_expex_lv', ], by = c('value_date'), suffixes = c('', '_baseline'))
   score_by_fd_rel[,
                    c(
                      'interval_score_rel',
@@ -131,8 +137,8 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
   ]
   
   
-  score_by_fd_long_rel = melt(score_by_fd_rel, id.vars = c('model', 'value_date'), measure.vars = c('interval_score_rel', 'aem_rel', 'bias'), value.name = 'score', variable.name = 'score_type')
-  score_by_age_long_rel = melt(score_by_age_rel, id.vars = c('model', 'age_index', 'periods'), measure.vars = c('bias', 'aem_rel', 'interval_score_rel' ), value.name = 'score', variable.name = 'score_type')
+  score_by_fd_long_rel = melt(score_by_fd_rel, id.vars = c('model', 'value_date'), measure.vars = c('interval_score_rel', 'aem_rel'), value.name = 'score', variable.name = 'score_type')
+  score_by_age_long_rel = melt(score_by_age_rel, id.vars = c('model', 'age_index', 'periods'), measure.vars = c( 'aem_rel', 'interval_score_rel' ), value.name = 'score', variable.name = 'score_type')
   
   
   p1 =
@@ -140,8 +146,8 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
     geom_point(aes(x=value_date, y=score, color=model))+
     geom_line(aes(x=value_date, y=score, color=model), linetype='dashed')+
     facet_wrap(~score_type, ncol=1, scale='free_y', labeller = labeller(score_type=setNames(c('Interval Score', "Absolute error of the mean",  'Bias'),c('interval_score_rel', 'aem_rel', 'bias'))))+
-    scale_color_discrete(name='', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data',  'Baseline - last generation value', 'Baseline - linear extrapolation'))+
-    scale_x_date(name='')+
+    scale_color_discrete(name='', labels=labels)+
+    scale_y_continuous(trans='log2')+
     theme_minimal_hgrid()+
     theme(legend.position = 'bottom')
   
@@ -157,8 +163,9 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
     geom_point(aes(y=age_index, x=score, color=model))+
     geom_path(aes(y=age_index, x=score, color=model), linetype='dashed')+
     facet_grid(periods~score_type, scale='free_x', labeller = labeller(score_type=setNames(c('Interval Score', "Absolute error \nof the mean",  'Bias'),c('interval_score_rel',  'aem_rel', 'bias'))))+
-    scale_color_discrete(name='', labels=c('Full contact data', 'Age-group means', 'Overall means', 'No contact data',  'Baseline - last generation value', 'Baseline - linear extrapolation'))+
+    scale_color_discrete(name='', labels=labels)+
     scale_y_continuous(name='age group', breaks = 1:length(age_groups), labels = age_groups, trans='reverse')+
+    scale_x_continuous(trans='log2')+
     theme_minimal_vgrid()+
     theme(
       legend.position = 'bottom'
@@ -178,10 +185,43 @@ score_forecasts = function(summary_preds, pandemic_periods, suffix='') {
   score_age = scoringutils::eval_forecasts(preds_to_score, 
                                                summarise_by = c("model", 'age_group'))
   
+  
+  score_age_rel = merge(score_age, score_age[model=='baseline_expex_lv', ], by = c('age_group'), suffixes = c('', '_baseline'))
+  score_age_rel[,
+                   c(
+                     'interval_score_rel',
+                     'bias_rel', 
+                     'aem_rel'
+                   ) 
+                   :=
+                     list(
+                       interval_score/interval_score_baseline,
+                       bias/bias_baseline,
+                       aem/aem_baseline
+                     )
+  ]
+  
+  
+  score_period_rel = merge(score_by_period, score_by_period[model=='baseline_expex_lv', ], by = c('periods'), suffixes = c('', '_baseline'))
+  score_period_rel[,
+                c(
+                  'interval_score_rel',
+                  'bias_rel', 
+                  'aem_rel'
+                ) 
+                :=
+                  list(
+                    interval_score/interval_score_baseline,
+                    bias/bias_baseline,
+                    aem/aem_baseline
+                  )
+  ]
+  
+  
   write.csv(score_by_period, paste0('outputs/score_by_period', suffix, '.csv'))
   write.csv(score_overall,   paste0('outputs/score_overall', suffix, '.csv'))
   
-  summary_scores = list(score_overall=score_overall, score_by_period=score_by_period, score_by_age=score_age)
+  summary_scores = list(score_overall=score_overall, score_by_period=score_period_rel, score_by_age=score_age_rel)
   
   st1 = melt(summary_scores[[2]], id.vars = c('model', 'periods'), measure.vars = c('interval_score', 'aem', 'bias'), variable.name = 'score_type', value.name = 'score')
   overall_table = dcast(st1, formula = periods + score_type ~ model, value.var = 'score')
