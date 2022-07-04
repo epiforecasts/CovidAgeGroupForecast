@@ -113,7 +113,7 @@ for(i in 1:length(all_est)){
 samples_preds[, date := forecast_date - (period+smax*7) + (time_index-1)*7]
 samples_preds[, age_group := age_groups[age_index]]
 # merge with time series of median infection estimates 
-samples_preds = merge(samples_preds, actualest_inc_long[,  true_value := value][,-c('value')], by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x = T, all.y = F )
+samples_preds = merge(samples_preds, case_data_age_groups[,  true_value := rolling_cases][,-c('rolling_cases', 'areaCode', 'areaName', 'areaType')], by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x = T, all.y = F )
 
 # calculate baseline
 
@@ -126,11 +126,35 @@ summary_preds[, value := rolling_cases]
 summary_preds[, variable := age_group]
 
 
+#samples_preds = data.table()
+#for(i in 1:length(all_est)){
+#  samples_preds = rbind(samples_preds, data.table(all_est[[i]]$samples_preds))
+#}
+#
+#samples_preds[, date := forecast_date - (period+smax*7) + (time_index-1)*7]
+#samples_preds[, age_group := age_groups[age_index]]
+## merge with time series of median infection estimates 
+#samples_preds = merge(samples_preds[, prediction:=value][, -c('value')], actualest_inc_long[,  true_value := value][,-c('value')], by.x = c('date', 'age_group'), by.y = c('date', 'age_group'), all.x = T, all.y = F )
+#
+samples_preds[, prediction:=value][, -c('value')]
+
+
 # calculate baselines using get_baselines function 
 baselines = get_baselines(case_estimates, summary_preds, smax=4, period=8, forecast_step = 7)
 # merge baselines with summary outputs
 summary_preds = rbind(summary_preds[, names(baselines), with=FALSE], baselines)
 
+baselines_samples = baselines[, prediction := `50%`][, -c("5%"    ,    "10%"   ,     "25%"    ,    "50%"    ,    "75%"    ,    "90%"  , "95%")]
+
+baselines_samples_mult = baselines_samples %>% mutate(sample=1)
+
+for(samp in 2:100){
+  baselines_samples_mult = rbind(baselines_samples_mult , baselines_samples %>% mutate(sample=samp))
+}
+
+baselines_samples_mult = baselines_samples_mult[, true_value := value][,-c('value')]
+
+samples_preds = rbind(samples_preds[,-c('value')], baselines_samples_mult[,-c('variable')])
 
 summary_conts = data.table()
 for(i in 1:length(all_est)){
@@ -153,6 +177,9 @@ ggplot(summary_preds) +
 saveRDS(summary_pars,  'outputs/summary_pars_cases.rds')
 saveRDS(summary_preds, 'outputs/summary_preds_cases.rds')
 saveRDS(summary_conts, 'outputs/summary_conts_cases.rds')
+
+saveRDS(samples_preds, 'outputs/samples_preds_cases.rds')
+
 
 
 
