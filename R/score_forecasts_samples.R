@@ -61,14 +61,51 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   score_by_age =  scores %>%
     summarise_scores(by = c("model", "age_index", "periods")) 
   
+  score_by_fd_hz = scores %>%
+    summarise_scores(by = c("model", "forecast_date", "horizon")) 
+
+  
+  
+  
+  
   # calculate scores aggregated by forecast date
   score_by_fd = scores %>%
     summarise_scores(by = c("model", "forecast_date")) 
   
   score_by_fd_long = melt(score_by_fd, id.vars = c('model', 'forecast_date'), measure.vars = c('crps', 'ae_median'), value.name = 'score', variable.name = 'score_type')
   score_by_age_long = melt(score_by_age, id.vars = c('model', 'age_index', 'periods'), measure.vars = c('crps', 'ae_median'), value.name = 'score', variable.name = 'score_type')
+  score_by_fd_hz_long = melt(score_by_fd_hz, id.vars = c('model', 'forecast_date', 'horizon'), measure.vars = c('crps', 'ae_median'), value.name = 'score', variable.name = 'score_type')
   
   
+  
+  score_by_fd_hz_rel = merge(score_by_fd_hz, score_by_fd_hz[model=='baseline_expex_lv', ], by = c('forecast_date', 'horizon'), suffixes = c('', '_baseline'))
+  score_by_fd_hz_rel[,
+                  c(
+                    'crps_rel', 
+                    'ae_median_rel'
+                  ) 
+                  :=
+                    list(
+                      crps/crps_baseline,
+                      ae_median/ae_median_baseline
+                    )
+  ]
+  
+  
+  score_by_fd_hz_long_rel = melt(score_by_fd_hz_rel, id.vars = c('model', 'forecast_date', 'horizon'), measure.vars = c('crps_rel', 'ae_median_rel'), value.name = 'score', variable.name = 'score_type')
+  
+  hists = ggplot(score_by_fd_hz_long_rel[!(model %in% c(2, 3)) & !(model %in% c('baseline_linex_lv', 'baseline_expex_lv')) & score_type == 'crps_rel',]) + 
+    geom_histogram(aes(x=score, fill=model), color='white', alpha=0.8) + 
+    facet_grid(model~horizon)+
+    theme_minimal_vgrid()
+  dists = ggplot(score_by_fd_hz_long_rel[!(model %in% c(2, 3)) & !(model %in% c('baseline_linex_lv', 'baseline_expex_lv')) & score_type == 'crps_rel',]) + 
+    geom_density(aes(x=score, fill=model), color='white', alpha=0.3) + 
+    facet_wrap(~horizon, ncol=1)+
+    xlim(0,2)+
+    theme_minimal_vgrid()+
+    theme(
+      legend.position = 'bottom'
+    )
   
   
   p1 =
@@ -173,14 +210,14 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   
   # calculate scores aggregated by pandemic period
-  score_by_period = scores %>% summarise_scores(by = c("model", "periods"))
+  score_by_period = scores %>% summarise_scores(by = c("model", "periods", 'horizon'))
   # calculate scores aggregated over entire output
-  score_overall = scores %>% summarise_scores(by = c("model"))
+  score_overall = scores %>% summarise_scores(by = c("model", 'horizon'))
   # calculate scores aggregated by age 
-  score_age = scores %>% summarise_scores(by = c("model", 'age_group'))
+  score_age = scores %>% summarise_scores(by = c("model", 'age_group', 'horizon'))
   
   
-  score_age_rel = merge(score_age, score_age[model=='baseline_expex_lv', ], by = c('age_group'), suffixes = c('', '_baseline'))
+  score_age_rel = merge(score_age, score_age[model=='baseline_expex_lv', ], by = c('age_group', 'horizon'), suffixes = c('', '_baseline'))
   score_age_rel[,
                    c(
                      'crps_rel', 
@@ -194,7 +231,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   ]
   
   
-  score_period_rel = merge(score_by_period, score_by_period[model=='baseline_expex_lv', ], by = c('periods'), suffixes = c('', '_baseline'))
+  score_period_rel = merge(score_by_period, score_by_period[model=='baseline_expex_lv', ], by = c('periods', 'horizon'), suffixes = c('', '_baseline'))
   score_period_rel[,
                 c(
                   'crps_rel', 
@@ -213,11 +250,11 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   summary_scores = list(score_overall=score_overall, score_by_period=score_period_rel, score_by_age=score_age_rel)
   
-  st1 = melt(summary_scores[[2]], id.vars = c('model', 'periods'), measure.vars = c('crps', 'ae_median'), variable.name = 'score_type', value.name = 'score')
-  overall_table = dcast(st1, formula = periods + score_type ~ model, value.var = 'score')
+  st1 = melt(summary_scores[[2]], id.vars = c('model', 'periods', 'horizon'), measure.vars = c('crps', 'ae_median'), variable.name = 'score_type', value.name = 'score')
+  overall_table = dcast(st1, formula = periods + score_type + horizon ~ model, value.var = 'score')
   
-  st2 = melt(summary_scores[[3]], id.vars = c('model', 'age_group'), measure.vars = c('crps', 'ae_median'), variable.name = 'score_type', value.name = 'score')
-  age_table = dcast(st2, formula = age_group + score_type ~ model, value.var = 'score')
+  st2 = melt(summary_scores[[3]], id.vars = c('model', 'age_group', 'horizon'), measure.vars = c('crps', 'ae_median'), variable.name = 'score_type', value.name = 'score')
+  age_table = dcast(st2, formula = age_group + score_type + horizon ~ model, value.var = 'score')
   
   
   

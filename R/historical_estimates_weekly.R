@@ -13,6 +13,7 @@ source('R/fit_model.R')
 source('R/plotting.R')
 source('R/make_infs_weekly.R')
 source('R/get_polymod_cms.R')
+source('R/generate_baselines.R')
 library(patchwork)
 
 breaks = c(2,11,16,25,35,50,70,Inf)
@@ -231,6 +232,19 @@ baselines = get_baselines(inf_estimates_weekly, summary_preds, smax = 4, period=
 # merge baselines with summary outputs
 summary_preds = rbind(summary_preds, baselines)
 
+baselines_samples = baselines[, prediction := `50%`][, -c("5%"    ,    "10%"   ,     "25%"    ,    "50%"    ,    "75%"    ,    "90%"  , "95%")]
+
+baselines_samples_mult = baselines_samples %>% mutate(sample=1)
+
+for(samp in 2:100){
+  baselines_samples_mult = rbind(baselines_samples_mult , baselines_samples %>% mutate(sample=samp))
+}
+
+samples_preds
+
+baselines_samples_mult = baselines_samples_mult[, true_value := value][,-c('value')]
+
+samples_preds = rbind(samples_preds, baselines_samples_mult)
 
 summary_conts = data.table()
 for(i in 1:length(all_est)){
@@ -297,12 +311,12 @@ overall_scores[, model := c('Full contact model',
                             'Exponential baseline', 
                             'Fixed value baseline')]
 
-age_scores = summary_scores$score_by_age[,c('model', 'age_group', 'interval_score_rel', 'aem_rel', 'bias')]
+age_scores = summary_scores$score_by_age[,c('model', 'age_group', 'crps_rel', 'bias')]
 
 
 ggplot(age_scores) +
-  geom_segment(aes(x=model, xend=model, y=1, yend=interval_score_rel), alpha=0.3)+
-  geom_point(aes(x=model, y=interval_score_rel, color=model))+
+  geom_segment(aes(x=model, xend=model, y=1, yend=crps_rel), alpha=0.3)+
+  geom_point(aes(x=model, y=crps_rel, color=model))+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='Interval Score')+
   scale_x_discrete(labels=NULL, name='')+
