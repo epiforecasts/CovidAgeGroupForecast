@@ -1,7 +1,7 @@
 library(data.table)
 library(ggplot2)
 library(patchwork)
-source('R/score_forecasts.R')
+source('R/score_forecasts_samples.R')
 source('R/plotting.R')
 
 
@@ -21,7 +21,7 @@ summary_scores_inf = score_forecasts(summary_preds_inf[date > as.Date('2020-10-0
                                             'Fixed value baseline'))
 
 
-overall_scores_inf = summary_scores_inf$score_overall[,c('model', 'crps', 'ae_median', 'bias')]
+overall_scores_inf = summary_scores_inf$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
 
 #overall_scores_inf[, model := c('CoMix contact data', 
 #                                'No contact data', 
@@ -60,13 +60,13 @@ age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
   )
 
 
-period_scores_inf = summary_scores_inf$score_by_period[,c('model', 'periods', 'crps_rel', 'ae_median_rel', 'bias')]
+period_scores_inf = summary_scores_inf$score_by_period[,c('model', 'periods', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
 
 
 period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv',]) +
-  geom_segment(aes(x=model, xend=model, y=1, yend=interval_score_rel), alpha=0.3)+
-  geom_point(aes(x=model, y=interval_score_rel, color=model))+
+  geom_segment(aes(x=model, xend=model, y=1, yend=crps_rel), alpha=0.3)+
+  geom_point(aes(x=model, y=crps_rel, color=model))+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='')+
   scale_x_discrete(labels=NULL, name='')+
@@ -77,13 +77,14 @@ period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv',]) +
                                 'Exponential baseline', 
                                 'Fixed value baseline'), 
                        name = 'Model')+
-  facet_wrap(~periods, nrow=1)+
+  facet_grid(horizon~periods)+
   ggtitle("B")+
   theme_minimal()+
   theme(
     axis.text.x = element_text(angle=90), 
     legend.position = 'none'
   )
+
 
 
 
@@ -99,7 +100,7 @@ summary_scores_cas = score_forecasts(summary_preds_cas[date > as.Date('2020-10-0
                                                'Fixed value baseline'))
 
 
-overall_scores_cas = summary_scores_cas$score_overall[,c('model', 'crps', 'ae_median', 'bias')]
+overall_scores_cas = summary_scores_cas$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
 
 #overall_scores_cas[, model := c('CoMix contact data', 
 #                                'No contact data', 
@@ -109,7 +110,7 @@ overall_scores_cas = summary_scores_cas$score_overall[,c('model', 'crps', 'ae_me
 #                                'Fixed value baseline')]
 #
 
-age_scores_cas = summary_scores_cas$score_by_age[,c('model', 'age_group',  'crps_rel', 'ae_median_rel', 'bias')]
+age_scores_cas = summary_scores_cas$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
 
 
@@ -126,7 +127,7 @@ age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
                                 'Exponential baseline', 
                                 'Fixed value baseline'), 
                        name = 'Model')+
-  facet_wrap(~age_group, nrow=1)+
+  facet_grid(horizon~age_group)+
   ggtitle("C")+
   theme_minimal()+
   theme(
@@ -135,7 +136,7 @@ age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   )
 
 
-period_scores_cas = summary_scores_cas$score_by_period[,c('model', 'periods', 'crps_rel', 'ae_median_rel', 'bias')]
+period_scores_cas = summary_scores_cas$score_by_period[,c('model', 'periods', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
 
 
@@ -152,7 +153,7 @@ period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv',]) +
                                 'Exponential baseline', 
                                 'Fixed value baseline'), 
                        name = 'Model')+
-  facet_wrap(~periods, nrow=1)+
+  facet_grid(horizon~periods)+
   ggtitle("B")+
   theme_minimal()+
   theme(
@@ -165,12 +166,13 @@ period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv',]) +
 
 overall_scores = rbind(overall_scores_inf[, type:='Infections'], overall_scores_cas[, type:='Cases'])
 
-overall_scores = merge(overall_scores, overall_scores[model=='baseline_expex_lv'], by = c('type'), suffixes = c('','_baseline'))
+overall_scores = merge(overall_scores, overall_scores[model=='baseline_expex_lv'], by = c('type', 'horizon'), suffixes = c('','_baseline'))
 overall_scores[, crps_rel := crps / crps_baseline]
 
 overall_sp = 
   ggplot(overall_scores) + 
-  geom_segment(aes(x=model, xend=model, y=1, yend=crps_rel), alpha=0.3)+
+  geom_s(aes(x=model, y=crps_rel+horizon*0.00001))+
+  #geom_curve(aes(x=model, xend=model, y=1, yend=crps_rel+horizon*0.00001, size=exp(horizon/7)), alpha=0.3, curvature = 0.15)+
   geom_point(aes(x=model, y=crps_rel, color=model))+
   facet_wrap(~type)+
   scale_color_discrete(labels=c('CoMix contact data', 
@@ -182,6 +184,7 @@ overall_sp =
                        name = 'Model')+
   scale_x_discrete(labels=NULL, name='')+
   scale_y_continuous(trans='log2', name='')+
+  scale_size(range=c(1,2))+
   theme_minimal()+
   ggtitle('A')+
   theme(
