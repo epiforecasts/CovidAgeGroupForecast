@@ -2,6 +2,7 @@ library(cowplot)
 library(magrittr)
 library(scoringutils)
 library(ggplot2)
+library(data.table)
 
 # set dates and names of key pandemic periods
 pandemic_periods = data.table(
@@ -34,7 +35,7 @@ pandemic_periods = data.table(
 
 
 # function to score forecasts based on single 'true' time series of infections
-score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_groups, 
+score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_groups,
                            labels=c('Full contact data', 
                                     'Age-group means', 
                                     'Overall means', 
@@ -42,17 +43,50 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
                                     'Baseline - last generation value', 
                                     'Baseline - linear extrapolation')) {
   
+  age_labs = age_groups
+  names(age_labs) = 1:length(age_groups)
+  
   preds_long = samples_preds[name=='forecast_gens'& date > forecast_date,]
   # manipulate outputs into correct format
   preds_long[, horizon := as.numeric(date - forecast_date)]
   preds_long[, model := run]
   preds_to_score = preds_long[,c('sample', 'age_group', 'age_index', 'date', 'prediction', 'true_value', 'model', 'forecast_date', 'horizon')]
   
+  true_values_frame = unique(preds_to_score[sample==1,c('date', 'true_value', 'model', 'age_index')])
+  
+  
   # create column to indicate pandemic periods 
   preds_to_score[, periods:=cut(preds_to_score$date,
                                 breaks = pandemic_periods$date_breaks, 
                                 labels = head(pandemic_periods$periods,-1))]
   
+  
+  preds_ranges = scoringutils:::sample_to_range_long(preds_to_score, range = c(0,50,90), keep_quantile_col = FALSE )
+  
+  preds_ranges = dcast(preds_ranges, formula = age_group + age_index + date + true_value + model + forecast_date +  horizon +  periods  + range ~ boundary, value.var = 'prediction')  
+  
+  predicrion_plot = 
+    #plot_predictions(preds_to_score[model!='baseline_linex_lv'], by = c('age_group', 'horizon')) + 
+    ggplot()+
+    
+      geom_point(data=preds_ranges[range==0 & !(model %in% c(4,5,6)),], aes(x=date, y=true_value), alpha=0.8, size=2)+
+      geom_point(data=true_values_frame, aes(date, true_value), shape=21, fill=NA, color='black', alpha=0.2, size=2)+
+      facet_grid(horizon~age_index, scale='free_y', labeller = labeller(age_index = age_labs))+
+      geom_rect(data=preds_ranges[range!=0 & !(model %in% c(4,5,6)),], aes(xmin=date-7, xmax=date+7, ymin=lower, ymax=upper, fill=model, alpha=range))+
+      geom_point(data=preds_ranges[range==0 & !(model %in% c(4,5,6)),], aes(x=date, y=lower, color=model), alpha=0.4)+
+      scale_alpha_binned(breaks=c(0.0, 0.5, 0.9, 1.0), range=c(0.5, 0.2))+
+      scale_color_discrete(name='Model', labels=labels[c(1,5,6)])+
+      scale_fill_discrete(name='Model', labels=labels[c(1,5,6)])+
+      scale_x_date(date_labels = "%b")+
+      xlab('')+
+      ylab('')+
+      theme_minimal_hgrid()+
+      theme(
+        plot.background = element_rect(fill = 'white')
+      )
+  
+  ggsave('plots/prediction_plot.png', width = 20, height = 10, units = 'in')
+
   scores = score(preds_to_score)
   
   scores[, model := as.character(model)]
@@ -63,6 +97,9 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   score_by_fd_hz = scores %>%
     summarise_scores(by = c("model", "forecast_date", "horizon")) 
+  
+  score_by_age_fd_hz = scores %>%
+    summarise_scores(by = c("model", "age_index", "forecast_date", "horizon")) 
 
   
   
@@ -77,6 +114,9 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   score_by_fd_hz_long = melt(score_by_fd_hz, id.vars = c('model', 'forecast_date', 'horizon'), measure.vars = c('crps', 'ae_median'), value.name = 'score', variable.name = 'score_type')
   
   
+  score_by_age_fd_hz_long = melt(score_by_age_fd_hz, id.vars = c('model', 'forecast_date', 'age_index', 'horizon'), measure.vars = c('crps', 'ae_median'), value.name = 'score', variable.name = 'score_type')
+  
+  
   
   score_by_fd_hz_rel = merge(score_by_fd_hz, score_by_fd_hz[model=='baseline_expex_lv', ], by = c('forecast_date', 'horizon'), suffixes = c('', '_baseline'))
   score_by_fd_hz_rel[,
@@ -89,6 +129,19 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
                       crps/crps_baseline,
                       ae_median/ae_median_baseline
                     )
+  ]
+  
+  score_by_age_fd_hz_rel = merge(score_by_age_fd_hz, score_by_age_fd_hz[model=='baseline_expex_lv', ], by = c('forecast_date', 'horizon', 'age_index'), suffixes = c('', '_baseline'))
+  score_by_age_fd_hz_rel[,
+                     c(
+                       'crps_rel', 
+                       'ae_median_rel'
+                     ) 
+                     :=
+                       list(
+                         crps/crps_baseline,
+                         ae_median/ae_median_baseline
+                       )
   ]
   
   
@@ -106,6 +159,27 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     theme(
       legend.position = 'bottom'
     )
+  
+  score_by_age_fd_hz_long_rel = melt(score_by_age_fd_hz_rel, id.vars = c('model', 'age_index',  'forecast_date', 'horizon'), measure.vars = c('crps_rel', 'ae_median_rel'), value.name = 'score', variable.name = 'score_type')
+  
+  
+  time_series_score = 
+    ggplot(score_by_age_fd_hz_long_rel[horizon %in% c(7, 28) & !(model %in% c(2,3,4,5,6)) & score_type == 'crps_rel']) + 
+    geom_point(aes(x=forecast_date, y=score, color=model, shape=as.character(horizon)))+
+    geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed')+
+    facet_wrap(~score_type, ncol=1, scale='free_y') + #, labeller = labeller(score_type=setNames(c('Interval Score',  'Bias', "Absolute error of the mean"),c('interval_score', 'bias', 'aem'))))+
+    scale_color_discrete(name='model', labels=labels[c(1,5,6)])+
+    scale_x_date(name='')+
+    facet_wrap(~age_index, nrow=1, labeller = labeller(age_index = age_labs))+
+    scale_y_continuous(trans = 'log2')+
+    theme_minimal_hgrid()
+  
+  
+  preds_and_scores = predicrion_plot / time_series_score + plot_layout(heights = c(4, 1))
+  
+  
+  ggsave('plots/preds_and_scores.png', preds_and_scores,  width = 20, height = 15, units = 'in')
+  
   
   
   p1 =
