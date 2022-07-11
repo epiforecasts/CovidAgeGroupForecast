@@ -38,11 +38,11 @@ smax=4 # weeks
 
 sr_dates = readRDS('sr_dates.rds')
 
-dates = seq(as.Date("2020-11-27"), as.Date('2021-12-02'), 14)
+dates = seq(as.Date("2020-11-27")-(4*7), as.Date('2021-12-02'), 14)
 
 plan(callr, workers = future::availableCores()-1)
 all_est = list()
-for(r in 1:5){ 
+for(r in c(1,4,5)){ 
   print(paste0('running model ', r))
   est <- future_lapply(
     dates, fit_NGM_model_for_date_range_cases,
