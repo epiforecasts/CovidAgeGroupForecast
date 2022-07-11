@@ -9,7 +9,7 @@ summary_preds_inf = readRDS('outputs/samples_preds_infweek.rds')
 summary_preds_cas = readRDS('outputs/samples_preds_cases.rds')
 
 
-summary_scores_inf = score_forecasts(summary_preds_inf[date > as.Date('2020-10-01') & !(run %in% c(2,3) | run=='baseline_linex_lv')], 
+outs_inf = score_forecasts(summary_preds_inf[date > as.Date('2020-10-01') & !(run %in% c(2,3) | run=='baseline_linex_lv')], 
                                  pandemic_periods,
                                  suffix = '_infections', 
                                  age_groups =  c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' ),
@@ -19,6 +19,12 @@ summary_scores_inf = score_forecasts(summary_preds_inf[date > as.Date('2020-10-0
                                             'Polymod contact data', 
                                             'Exponential baseline', 
                                             'Fixed value baseline'))
+
+
+summary_scores_inf = outs_inf[[1]]
+
+preds_plot_inf = outs_inf[[2]]
+scores_plot_inf = outs_inf[[3]]
 
 
 overall_scores_inf = summary_scores_inf$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
@@ -111,17 +117,21 @@ period_inf_bias = ggplot(period_scores_inf[model != 'baseline_linex_lv',]) +
   )
 
 
-summary_scores_cas = score_forecasts(summary_preds_cas[date > as.Date('2020-10-01') & !(run %in% c(2,3) | run=='baseline_linex_lv')], 
+outs_cas = score_forecasts(summary_preds_cas[date > as.Date('2020-10-01') & !(run %in% c(2,3) | run=='baseline_linex_lv')], 
                                     pandemic_periods, 
                                     suffix = '_cases', 
-                                    age_groups = age_groups,
+                                    age_groups = c('0-9',  '10-19',   '20-29',  '30-39',  '40-49',  '50-59',  '60-69', '70+'),
                                     labels = c('CoMix contact data', 
                                                'No contact data', 
                                                'No interaction',
                                                'Polymod contact data', 
                                                'Exponential baseline', 
                                                'Fixed value baseline'))
+summary_scores_cas = outs_cas[[1]]
 
+
+preds_plot_cas = outs_cas[[2]]
+scores_plot_cas = outs_cas[[3]]
 
 overall_scores_cas = summary_scores_cas$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
 
@@ -246,5 +256,15 @@ overageres = overall_sp / age_inf / age_cas + plot_layout(heights = c(2,1,1))
 
 ggsave('plots/overall_results.pdf', plot = overageres, width = 7, height=7, units = 'in')
 ggsave('plots/overall_results.png', plot = overageres, width = 7, height=7, units = 'in', dpi=300)
+
+
+((preds_plot_inf + ggtitle('A'))     +  (scores_plot_inf + ggtitle('C')) + plot_layout(widths=c(4,1))) / 
+((preds_plot_cas + ggtitle('B'))     +  (scores_plot_cas + ggtitle('D')) + plot_layout(widths=c(4,1))) / 
+guide_area()  + plot_layout(guides = 'collect', heights=c(3,3,1))
+
+ggsave('plots/preds_scores_both.png', width=15, height=10, units='in')
+
+
+
 
 
