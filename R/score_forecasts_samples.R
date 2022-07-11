@@ -69,8 +69,8 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     #plot_predictions(preds_to_score[model!='baseline_linex_lv'], by = c('age_group', 'horizon')) + 
     ggplot()+
     
-      geom_point(data=preds_ranges[range==0 & !(model %in% c(4,5,6)),], aes(x=date, y=true_value), alpha=0.8, size=2)+
-      geom_point(data=true_values_frame, aes(date, true_value), shape=21, fill=NA, color='black', alpha=0.2, size=2)+
+      geom_point(data=preds_ranges[range==0 & !(model %in% c(4,5,6)),], aes(x=date, y=true_value), alpha=0.8, size=1)+
+      geom_point(data=true_values_frame, aes(date, true_value), shape=21, fill=NA, color='black', alpha=0.2, size=1)+
       facet_grid(horizon~age_index, scale='free_y', labeller = labeller(age_index = age_labs))+
       geom_rect(data=preds_ranges[range!=0 & !(model %in% c(4,5,6)),], aes(xmin=date-7, xmax=date+7, ymin=lower, ymax=upper, fill=model, alpha=range))+
       geom_point(data=preds_ranges[range==0 & !(model %in% c(4,5,6)),], aes(x=date, y=lower, color=model), alpha=0.4)+
@@ -82,8 +82,11 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
       ylab('')+
       theme_minimal_hgrid()+
       theme(
-        plot.background = element_rect(fill = 'white')
-      )
+        plot.background = element_rect(fill = 'white'),
+        legend.position = 'bottom',
+        strip.text.y = element_blank()
+      )+
+      ggtitle('Predictions')
   
   ggsave('plots/prediction_plot.png', width = 20, height = 10, units = 'in')
 
@@ -163,7 +166,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   score_by_age_fd_hz_long_rel = melt(score_by_age_fd_hz_rel, id.vars = c('model', 'age_index',  'forecast_date', 'horizon'), measure.vars = c('crps_rel', 'ae_median_rel'), value.name = 'score', variable.name = 'score_type')
   
   
-  time_series_score = 
+  time_series_score_age = 
     ggplot(score_by_age_fd_hz_long_rel[horizon %in% c(7, 28) & !(model %in% c(2,3,4,5,6)) & score_type == 'crps_rel']) + 
     geom_point(aes(x=forecast_date, y=score, color=model, shape=as.character(horizon)))+
     geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed')+
@@ -174,11 +177,24 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     scale_y_continuous(trans = 'log2')+
     theme_minimal_hgrid()
   
+  time_series_score = 
+    ggplot(score_by_fd_hz_long_rel[!(model %in% c(2,3,4,5,6)) & score_type == 'crps_rel']) + 
+    geom_point(aes(x=forecast_date, y=score, color=model))+
+    geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed')+
+    scale_color_discrete(name='model', labels=labels[c(1,5,6)])+
+    scale_x_date(name='', date_labels = '%b')+
+    facet_wrap(~horizon, ncol=1, labeller = labeller(age_index = age_labs),strip.position = 'right')+
+    scale_y_continuous(trans = 'log2')+
+    theme_minimal_hgrid()+
+    theme(legend.position = 'bottom') + 
+    ylab('')+
+    ggtitle('CRPS')
   
-  preds_and_scores = predicrion_plot / time_series_score + plot_layout(heights = c(4, 1))
+  
+  preds_and_scores = predicrion_plot + time_series_score + plot_layout(widths = c(4, 1))
   
   
-  ggsave('plots/preds_and_scores.png', preds_and_scores,  width = 20, height = 15, units = 'in')
+  ggsave(paste0('plots/preds_and_scores_', suffix, '.png'), preds_and_scores,  width = 20, height = 10, units = 'in')
   
   
   
