@@ -39,7 +39,6 @@ smax=4 # weeks
 sr_dates = readRDS('sr_dates.rds')
 
 dates = seq(as.Date("2020-11-27")-(4*7), as.Date('2021-12-02'), 14)
-
 plan(callr, workers = future::availableCores()-1)
 all_est = list()
 for(r in c(1,4,5)){ 
@@ -61,7 +60,9 @@ for(r in c(1,4,5)){
     sigma_option=1,
     contact_delay = 5, 
     forecast_horizon = 4,
+    ad=0.99,
     future.seed=TRUE
+    
   )
   
   all_est = append(all_est, est)
@@ -87,7 +88,8 @@ est <- future_lapply(
   sigma_option=1,
   contact_delay = 5, 
   forecast_horizon = 4,
-  future.seed=TRUE
+  future.seed=TRUE,
+  ad=0.99
 )
 
 all_est = append(all_est, est)
@@ -98,6 +100,17 @@ summary_pars = data.table()
 for(i in 1:length(all_est)){
   summary_pars = rbind(summary_pars, data.table(all_est[[i]]$summary_pars))
 }
+
+
+summary_diags = data.table()
+for(i in 1:length(all_est)){
+  summary_diags = rbind(summary_diags, data.table(all_est[[i]]$diagnostics))
+}
+
+for(i in 1:length(all_est)){
+  summary_pars = rbind(summary_pars, data.table(all_est[[i]]$summary_pars))
+}
+
 
 summary_preds = data.table()
 for(i in 1:length(all_est)){
@@ -178,6 +191,8 @@ saveRDS(summary_pars,  'outputs/summary_pars_cases.rds')
 saveRDS(summary_preds, 'outputs/summary_preds_cases.rds')
 saveRDS(summary_conts, 'outputs/summary_conts_cases.rds')
 
+saveRDS(summary_diags, 'outputs/summary_diags_cases.rds')
+
 saveRDS(samples_preds, 'outputs/samples_preds_cases.rds')
 
 
@@ -230,4 +245,4 @@ ggplot(age_scores[model != 'baseline_linex_lv',]) +
   )
 
 
-plot_parameters(summary_pars, d, '_cases')
+plot_parameters(summary_pars, dates, '_cases')

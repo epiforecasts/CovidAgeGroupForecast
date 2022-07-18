@@ -65,6 +65,8 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   preds_ranges = dcast(preds_ranges, formula = age_group + age_index + date + true_value + model + forecast_date +  horizon +  periods  + range ~ boundary, value.var = 'prediction')  
   
+  vibrant = colour('vibrant')
+  
   predicrion_plot = 
     #plot_predictions(preds_to_score[model!='baseline_linex_lv'], by = c('age_group', 'horizon')) + 
     ggplot()+
@@ -75,8 +77,8 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
       geom_rect(data=preds_ranges[range!=0 & !(model %in% c(4,5,6)),], aes(xmin=date-7, xmax=date+7, ymin=lower, ymax=upper, fill=model, alpha=range))+
       geom_point(data=preds_ranges[range==0 & !(model %in% c(4,5,6)),], aes(x=date, y=lower, color=model), alpha=0.4)+
       scale_alpha_binned(breaks=c(0.0, 0.5, 0.9, 1.0), range=c(0.5, 0.2))+
-      scale_color_discrete(name='Model', labels=labels[c(1,5,6)])+
-      scale_fill_discrete(name='Model', labels=labels[c(1,5,6)])+
+      scale_color_manual(name='Model', labels=labels[c(1,5,6)], values=as.vector(vibrant(6))[c(1,5,6)])+
+      scale_fill_manual(name='Model', labels=labels[c(1,5,6)], values=as.vector(vibrant(6))[c(1,5,6)])+
       scale_x_date(date_labels = "%b")+
       xlab('')+
       ylab('')+

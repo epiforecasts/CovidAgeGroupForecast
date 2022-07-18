@@ -143,7 +143,7 @@ period = 8*7
 smax = 4 
 
 # call the fit_NGM_model_for_date_range for each date in dates
-plan(callr, workers = future::availableCores())
+plan(callr, workers = future::availableCores()-1)
 all_est = list()
 
 
@@ -201,6 +201,12 @@ summary_pars = data.table()
 for(i in 1:length(all_est)){
   summary_pars = rbind(summary_pars, data.table(all_est[[i]]$summary_pars))
 }
+
+summary_diags = data.table()
+for(i in 1:length(all_est)){
+  summary_diags = rbind(summary_diags, data.table(all_est[[i]]$diagnostics))
+}
+
 
 summary_preds = data.table()
 for(i in 1:length(all_est)){
@@ -284,7 +290,7 @@ ggplot(summary_preds) +
 saveRDS(summary_pars, 'outputs/summary_pars_infweek.rds')
 saveRDS(summary_preds, 'outputs/summary_preds_infweek.rds')
 saveRDS(summary_conts, 'outputs/summary_conts_infweek.rds')
-
+saveRDS(summary_diags, 'outputs/summary_diags_infweek.rds')
 
 saveRDS(samples_preds, 'outputs/samples_preds_infweek.rds')
 

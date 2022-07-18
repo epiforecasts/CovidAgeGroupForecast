@@ -9,6 +9,13 @@ summary_preds_inf = readRDS('outputs/samples_preds_infweek.rds')
 summary_preds_cas = readRDS('outputs/samples_preds_cases.rds')
 
 
+age_labs_inf_reverse = 1:7
+names(age_labs_inf_reverse) = c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )
+
+age_labs_inf_forward = names(age_labs_case_reverse)
+names(age_labs_inf_forward) = age_labs_case_reverse
+
+
 summary_scores_inf = score_forecasts(summary_preds_inf[date > as.Date('2020-10-01') & !(run %in% c(2,3) | run=='baseline_linex_lv')], 
                                  pandemic_periods,
                                  suffix = '_infections', 
@@ -37,7 +44,7 @@ ggplot(overall_scores_inf) +
 age_scores_inf = summary_scores_inf$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
 
-
+age_scores_inf[, age_index := age_labs_inf_reverse[age_group]]
 
 age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
   #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
@@ -53,7 +60,7 @@ age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
                                 'Exponential baseline', 
                                 'Fixed value baseline'), 
                        name = 'Model')+
-  facet_wrap(~age_group, nrow=1)+
+  facet_wrap(~age_index, nrow=1, labeller = labeller(age_index = age_labs_inf_forward))+
   ggtitle("B")+
   theme_minimal()+
   theme(
@@ -248,3 +255,8 @@ ggsave('plots/overall_results.pdf', plot = overageres, width = 7, height=7, unit
 ggsave('plots/overall_results.png', plot = overageres, width = 7, height=7, units = 'in', dpi=300)
 
 
+
+
+inf_pars =readRDS('outputs/summary_pars_infweek.rds')
+
+inf_pars
