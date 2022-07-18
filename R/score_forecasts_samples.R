@@ -3,6 +3,7 @@ library(magrittr)
 library(scoringutils)
 library(ggplot2)
 library(data.table)
+library(lubridate)
 
 # set dates and names of key pandemic periods
 pandemic_periods = data.table(
@@ -52,6 +53,8 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   preds_long[, model := run]
   preds_to_score = preds_long[,c('sample', 'age_group', 'age_index', 'date', 'prediction', 'true_value', 'model', 'forecast_date', 'horizon')]
   
+  preds_to_score[, horizon_long := paste0(horizon/7, ' week forecast')]
+  
   true_values_frame = unique(preds_to_score[sample==1,c('date', 'true_value', 'model', 'age_index')])
   
   
@@ -63,34 +66,62 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   preds_ranges = scoringutils:::sample_to_range_long(preds_to_score, range = c(0,50,90), keep_quantile_col = FALSE )
   
-  preds_ranges = dcast(preds_ranges, formula = age_group + age_index + date + true_value + model + forecast_date +  horizon +  periods  + range ~ boundary, value.var = 'prediction')  
+  preds_ranges = dcast(preds_ranges, formula = age_group + age_index + date + true_value + model + forecast_date +  horizon + horizon_long +  periods  + range ~ boundary, value.var = 'prediction')  
   
+
   vibrant = colour('vibrant')
   
-  predicrion_plot = 
+  
+  plot_predictions = function(additional_models = c(), horizons = 7 * 1:4){
+    
+    preds_ranges= preds_ranges[horizon %in% horizons,]
+    
+    models_to_drop = setdiff(c(4,5,6), additional_models)
+    pred_plot = 
     #plot_predictions(preds_to_score[model!='baseline_linex_lv'], by = c('age_group', 'horizon')) + 
     ggplot()+
     
-      geom_point(data=preds_ranges[range==0 & !(model %in% c(4,5,6)),], aes(x=date, y=true_value), alpha=0.8, size=1)+
-      geom_point(data=true_values_frame, aes(date, true_value), shape=21, fill=NA, color='black', alpha=0.2, size=1)+
-      facet_grid(horizon~age_index, scale='free_y', labeller = labeller(age_index = age_labs))+
-      geom_rect(data=preds_ranges[range!=0 & !(model %in% c(4,5,6)),], aes(xmin=date-7, xmax=date+7, ymin=lower, ymax=upper, fill=model, alpha=range))+
-      geom_point(data=preds_ranges[range==0 & !(model %in% c(4,5,6)),], aes(x=date, y=lower, color=model), alpha=0.4)+
-      scale_alpha_binned(breaks=c(0.0, 0.5, 0.9, 1.0), range=c(0.5, 0.2))+
-      scale_color_manual(name='Model', labels=labels[c(1,5,6)], values=as.vector(vibrant(6))[c(1,5,6)])+
-      scale_fill_manual(name='Model', labels=labels[c(1,5,6)], values=as.vector(vibrant(6))[c(1,5,6)])+
-      scale_x_date(date_labels = "%b")+
-      xlab('')+
-      ylab('')+
-      theme_minimal_hgrid()+
-      theme(
-        plot.background = element_rect(fill = 'white'),
-        legend.position = 'bottom',
-        strip.text.y = element_blank()
-      )+
-      ggtitle('Predictions')
+    geom_point(data=preds_ranges[range==0 & !(model %in% models_to_drop),], aes(x=date, y=true_value), alpha=0.8, size=1)+
+    geom_point(data=true_values_frame, aes(date, true_value), shape=21, fill=NA, color='black', alpha=0.2, size=1)+
+    facet_grid(horizon_long~age_index, scale='free_y', labeller = labeller(age_index = age_labs))+
+    geom_rect(data=preds_ranges[range!=0 & !(model %in% models_to_drop),], aes(xmin=date-7, xmax=date+7, ymin=lower, ymax=upper, fill=model, alpha=range))+
+    geom_point(data=preds_ranges[range==0 & !(model %in% models_to_drop),], aes(x=date, y=lower, color=model), alpha=0.4)+
+    scale_alpha_binned(breaks=c(0.0, 0.5, 0.9, 1.0), range=c(0.5, 0.2))+
+    scale_color_manual(name='Model', labels=labels[sort(c(c(1,5,6), (additional_models-2)))]  , values=as.vector(vibrant(6))[sort(c(c(1,5,6), (additional_models-2)))]  )+
+    scale_fill_manual(name='Model', labels=labels[sort(c(c(1,5,6), (additional_models-2)))]  , values=as.vector(vibrant(6))[sort(c(c(1,5,6), (additional_models-2)))]  )+
+    scale_x_date(date_breaks = "3 months", 
+                 labels = function(x) if_else(is.na(lag(x)) | !year(lag(x)) == year(x), 
+                                              paste(month(x, label = TRUE), "\n", year(x)), 
+                                              paste(month(x, label = TRUE))))+
+    scale_y_continuous(trans='log10')+
+    xlab('')+
+    ylab(str_to_title(substr(suffix, 2, nchar(suffix))))+
+    theme_minimal_hgrid()+
+    theme(
+      plot.background = element_rect(fill = 'white'),
+      legend.position = 'bottom',
+      axis.text.x = element_text(size=9)
+    )+
+    ggtitle('A')
+    
+    return(pred_plot)
+    
+  }
   
-  ggsave('plots/prediction_plot.png', width = 20, height = 10, units = 'in')
+  full_model_alone_plot_2 = plot_predictions(horizons = c(7, 28))
+  
+  full_model_alone_plot = plot_predictions()
+  ggsave(paste0('plots/prediction_plot', suffix, '.png'), width = 15, height = 7, units = 'in')
+  
+  full_model_alone_plot_no_data = plot_predictions(c(4))
+  ggsave(paste0('plots/prediction_plot', suffix, '_no_data.png'), width = 15, height = 7, units = 'in')
+  
+  full_model_alone_plot_no_intr = plot_predictions(c(5))
+  ggsave(paste0('plots/prediction_plot', suffix, '_no_intr.png'), width = 15, height = 7, units = 'in')
+  
+  full_model_alone_plot_no_intr = plot_predictions(c(6))
+  ggsave(paste0('plots/prediction_plot', suffix, '_polymod.png'), width = 15, height = 7, units = 'in')
+
 
   scores = score(preds_to_score)
   
@@ -168,6 +199,8 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   score_by_age_fd_hz_long_rel = melt(score_by_age_fd_hz_rel, id.vars = c('model', 'age_index',  'forecast_date', 'horizon'), measure.vars = c('crps_rel', 'ae_median_rel'), value.name = 'score', variable.name = 'score_type')
   
   
+  score_by_fd_hz_long_rel[, horizon_long := paste0(horizon/7, ' week forecast')]
+  
   time_series_score_age = 
     ggplot(score_by_age_fd_hz_long_rel[horizon %in% c(7, 28) & !(model %in% c(2,3,4,5,6)) & score_type == 'crps_rel']) + 
     geom_point(aes(x=forecast_date, y=score, color=model, shape=as.character(horizon)))+
@@ -177,26 +210,57 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     scale_x_date(name='')+
     facet_wrap(~age_index, nrow=1, labeller = labeller(age_index = age_labs))+
     scale_y_continuous(trans = 'log2')+
-    theme_minimal_hgrid()
+    theme_minimal_hgrid()+
+    theme(
+      axis.text.x = element_text(size=9)
+    )
   
   time_series_score = 
     ggplot(score_by_fd_hz_long_rel[!(model %in% c(2,3,4,5,6)) & score_type == 'crps_rel']) + 
-    geom_point(aes(x=forecast_date, y=score, color=model))+
-    geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed')+
+    geom_point(aes(x=forecast_date, y=score, color=model, alpha=0.6))+
+    geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed', alpha=0.8)+
     scale_color_discrete(name='model', labels=labels[c(1,5,6)])+
     scale_x_date(name='', date_labels = '%b')+
     facet_wrap(~horizon, ncol=1, labeller = labeller(age_index = age_labs),strip.position = 'right')+
     scale_y_continuous(trans = 'log2')+
     theme_minimal_hgrid()+
-    theme(legend.position = 'bottom') + 
-    ylab('')+
-    ggtitle('CRPS')
+    theme(legend.position = 'none') + 
+    ylab('CRPS')+
+    ggtitle('B')+
+    theme(
+      axis.text.x = element_text(size=9)
+    )
   
   
-  preds_and_scores = predicrion_plot + time_series_score + plot_layout(widths = c(4, 1))
+  preds_and_scores = full_model_alone_plot + time_series_score + plot_layout(widths = c(4, 1))
   
   
-  ggsave(paste0('plots/preds_and_scores_', suffix, '.png'), preds_and_scores,  width = 20, height = 10, units = 'in')
+  ggsave(paste0('plots/preds_and_scores_', suffix, '.png'), preds_and_scores,  width = 15, height = 10, units = 'in')
+  
+  
+  time_series_score_2 = 
+    ggplot(score_by_fd_hz_long_rel[!(model %in% c(2,3,4,5,6)) & score_type == 'crps_rel' & horizon %in% c(7,28)]) + 
+    geom_point(aes(x=forecast_date, y=score, color=model, alpha=0.6))+
+    geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed', alpha=0.8)+
+    scale_color_discrete(name='model', labels=labels[c(1,5,6)])+
+    scale_x_date(name='', date_labels = '%b')+
+    facet_wrap(~horizon_long, ncol=1, labeller = labeller(age_index = age_labs),strip.position = 'right')+
+    scale_y_continuous(trans = 'log2')+
+    theme_minimal_hgrid()+
+    theme(legend.position = 'none') + 
+    ylab('CRPS')+
+    ggtitle('B')+
+    theme(
+      axis.text.x = element_text(size=9)
+    )
+  
+  
+  preds_and_scores = full_model_alone_plot_2 + time_series_score_2 + plot_layout(widths = c(4, 1))
+  
+  
+  ggsave(paste0('plots/preds_and_scores_2_', suffix, '.png'), preds_and_scores,  width = 15, height = 6, units = 'in')
+  
+  
   
   
   
@@ -354,7 +418,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   write.csv(overall_table, file = paste0('outputs/overall_results', suffix, '.csv'))
   write.csv(age_table, file =     paste0('outputs/age_results',     suffix, '.csv'))
   
-  summary_scores
+  list(summary_scores, full_model_alone_plot_2, time_series_score_2)
 
 }
 

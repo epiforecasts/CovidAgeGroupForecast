@@ -25,6 +25,21 @@ breaks = c(c(0),seq(9,69, 10), c(Inf))
 
 age_groups = c('0-9',  '10-19',   '20-29',  '30-39',  '40-49',  '50-59',  '60-69', '70+')
 
+cas_traj = ggplot(case_data_age_groups[date>lubridate::ymd(20200730)]) + 
+  #geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
+  geom_point(aes(x=date, y=rolling_cases, color=age_group), size=1, stroke=0)+
+  facet_wrap(~age_group, nrow=1)+
+  scale_y_continuous(name='Cases', limits = c(0,100000))+
+  scale_x_date( name='Date', date_labels = '%b-%y')+
+  scale_color_manual(name='Age group', values = as.vector(light(9)))+
+  theme_minimal_hgrid()+
+  ggtitle('C')+
+  theme(axis.text.x = element_text(angle = 45, size=10))
+
+inf_traj/anb_traj/cas_traj
+
+ggsave('plots/inputs.pdf',  width=15, height=7)
+ggsave('plots/inputs.png',  width=15, height=7, units = 'in', dpi=300)
 
 case_matrix_mean  = dcast(case_data_age_groups, value.var = 'rolling_cases', date ~ age_group)
 
