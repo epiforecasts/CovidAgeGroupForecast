@@ -63,6 +63,7 @@ transformed parameters{
   
   
   // initialise and set the size of the combined sigma parameters based on the ocontact options
+
   real<lower=0> combined_sigma_cm[contact_option == 1 ? W : 0, contact_option == 1 ? A : 0,  contact_option == 1 ? A : 0];
   real<lower=0> combined_sigma_mca[contact_option == 2 ? W : 0, contact_option == 2 ? A : 0];
   real<lower=0> combined_sigma_mc[contact_option == 3 ? W : 0];
@@ -72,6 +73,7 @@ transformed parameters{
   for(a in 1:A){
     inf_rate[a] = exp(inf_rate_hyper_mu + inf_rate_hyper_sd * inf_prime[a]);
     susceptibility[a] = exp(suscept_hyper_mu + suscept_hyper_sd * sus_prime[a]);
+
   }
   
   // calculate contact matrix weighted by the population distribution to maintain reciprocity

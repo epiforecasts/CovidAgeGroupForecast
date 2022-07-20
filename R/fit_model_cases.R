@@ -21,6 +21,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
                                         contact_delay=0, 
                                         forecast_horizon=10,
                                         ad=0.8
+
 ){
   
   # set the end and start dates as date objects
@@ -218,6 +219,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
     summary_preds  =summary_preds, 
     summary_conts = summary_conts, 
     diagnostics = out
+
   )
   
   return(outs)

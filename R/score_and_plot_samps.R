@@ -19,7 +19,6 @@ names(age_labs_inf_forward) = age_labs_inf_reverse
 
 
 outs_inf = score_forecasts(summary_preds_inf[date > as.Date('2020-10-01') & !(run %in% c(2,3) | run=='baseline_linex_lv')], 
-
                                  pandemic_periods,
                                  suffix = '_infections', 
                                  age_groups =  c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' ),
@@ -53,9 +52,11 @@ ggplot(overall_scores_inf) +
 age_scores_inf = summary_scores_inf$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
 
+
 age_scores_inf[, age_index := age_labs_inf_reverse[age_group]]
 
 vibrant = colour('vibrant')
+
 
 
 age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
@@ -73,6 +74,21 @@ age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)))+
   facet_wrap(~age_index, nrow=1, labeller = labeller(age_index = age_labs_inf_forward))+
+
+  geom_point(aes(x=horizon, y=crps_rel, color=model))+
+  geom_line(aes(x=horizon, y=crps_rel, color=model), linetype='dashed')+
+  geom_hline(yintercept = 1)+
+  scale_y_continuous(trans='log2', name='crps')+
+  scale_x_discrete(labels=NULL, name='')+
+  scale_color_discrete(labels=c('CoMix contact data', 
+                                'No contact data', 
+                                'No interaction',
+                                'Polymod contact data', 
+                                'Exponential baseline', 
+                                'Fixed value baseline'), 
+                       name = 'Model')+
+  facet_wrap(~age_group, nrow=1)+
+
   ggtitle("B")+
   theme_minimal()+
   theme(
@@ -99,6 +115,7 @@ period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv',]) +
                               'Exponential baseline', 
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)))+
+
   facet_wrap(~periods, nrow=1)+
   ggtitle("A")+
   theme_minimal()+
@@ -175,6 +192,7 @@ age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
                               'Exponential baseline', 
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)))+
+
   facet_wrap(~age_group, nrow=1)+
   ggtitle("C")+
   theme_minimal()+
@@ -184,10 +202,7 @@ age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   )
 
 
-
 period_scores_cas = summary_scores_cas$score_by_period[,c('model', 'periods', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
-
-
 
 
 period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv',]) +
@@ -203,6 +218,7 @@ period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv',]) +
                               'Exponential baseline', 
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)))+
+
   facet_wrap(~periods, nrow=1)+
   ggtitle("B")+
   theme_minimal()+
@@ -216,7 +232,6 @@ period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv',]) +
 period_inf/period_cas
 
 ggsave('plots/periods.png',width = 7, height=5, units='in')
-
 
 period_all_bias = ggplot(rbind(period_scores_cas[,type:='cases'], period_scores_inf[,type:='infections'])[model != 'baseline_linex_lv',]) +
   geom_path(aes(x=bias, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
@@ -240,12 +255,14 @@ period_all_bias = ggplot(rbind(period_scores_cas[,type:='cases'], period_scores_
                              'Exponential baseline', 
                              'Fixed value baseline'), 
                     name = 'Model', values = as.vector(vibrant(6)))+
+
   facet_grid(type~periods, scale='free')+
   theme_minimal()+
   theme(
     axis.text.x = element_text(angle=90), 
     legend.position = 'bottom'
   )
+
 
 ggsave('plots/periods_bias.png',width = 7, height=5, units='in')
 
@@ -285,6 +302,7 @@ overageres = overall_sp / age_inf / age_cas + plot_layout(heights = c(2,1,1))
 
 ggsave('plots/overall_results.pdf', plot = overageres, width = 7, height=7, units = 'in')
 ggsave('plots/overall_results.png', plot = overageres, width = 7, height=7, units = 'in', dpi=300)
+
 
 
 
