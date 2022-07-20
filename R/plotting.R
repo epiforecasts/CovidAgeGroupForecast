@@ -50,7 +50,7 @@ plot_parameters = function(summary_pars, d, suffix=''){
     #geom_rect(aes(xmin=index, xmax=index, ymin=`5%`, ymax=`95%`, fill=forecast_date),alpha=0.5)+
     geom_line(aes(x=index, y=`50%`, color=forecast_date, group=forecast_date), alpha=0.2)+
     geom_point(aes(x=index, y=`50%`, color=forecast_date, group=forecast_date), alpha=0.2)+
-    facet_grid(name~run, scale='free_y', labeller=labeller(run= setNames(nm=1:4, object=c('Full \ncontact data', 'Age-group \nmeans', 'Overall \nmeans', 'No \ncontact data')), name = setNames(nm=c('inf_rate', 'susceptibility'), object=c('Inectiousness', 'Susceptibility'))))+
+    facet_grid(name~run, scale='free_y', labeller=labeller(run= setNames(nm=1:6, object=c('CoMix data', 'Age-group \nmeans', 'Overall \nmeans', 'No \ncontact data','No \ninteraction', 'POLYMOD data')), name = setNames(nm=c('inf_rate', 'susceptibility'), object=c('Inectiousness', 'Susceptibility'))))+
     scale_x_continuous(name='Age group', breaks = 1:length(age_groups), labels = age_groups, )+
     scale_fill_continuous(name='')+
     scale_color_viridis(name='',breaks = as.numeric(lab_dates), 

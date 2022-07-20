@@ -46,15 +46,7 @@ inf_estimates[, sd_no := sd]
 inf_estimates[, age_group_no := age_lookup[variable]]
 
 # plot of infection time series
-inf_traj = ggplot(inf_estimates) + 
-  geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
-  geom_point(aes(x=date, y=mean_no), size=0.3, stroke=0, color='red')+
-  facet_wrap(~age_group_no, nrow=1, labeller= labeller(age_group_no = age_labs))+
-  scale_y_continuous(name='Infections')+
-  scale_x_date(breaks = c(), name='')+
-  theme_minimal_hgrid()+
-  ggtitle('A')+
-  geom_vline(xintercept = lubridate::ymd('2021-11-09'))
+
 
 
 inf_estimates_weekly = inf_estimates[,weekly_mean := mean, by=c('variable')]
@@ -62,6 +54,16 @@ inf_estimates_weekly = inf_estimates[,weekly_sd := sd, by=c('variable')]
 
 
 inf_estimates_weekly = inf_estimates_weekly[date %in% select_dates,]
+
+inf_traj = ggplot(inf_estimates_weekly) + 
+  #geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
+  geom_pointrange(aes(x=date, y=mean_no, ymin=q10, ymax=q90, color=as.character(age_group_no)), size=0.3, stroke=0)+
+  facet_wrap(~age_group_no, nrow=1, labeller= labeller(age_group_no = age_labs))+
+  scale_y_continuous(name='Infections', limits=c(0,3e5))+
+  scale_x_date(breaks = c(), name='')+
+  scale_color_manual(name='Age group', values = as.vector(light(9)), labels =age_labs)+
+  theme_minimal_hgrid()+
+  ggtitle('A')
 # construct mean and sd of infections matrices
 inf_matrix_mean  = dcast(inf_estimates_weekly, value.var = 'weekly_mean', date ~ variable)
 inf_matrix_sd = dcast(inf_estimates_weekly, value.var = 'weekly_sd', date ~ variable)
@@ -84,15 +86,15 @@ ab_estimates_weekly[, age_group_no := age_lookup[variable]]
 
 # plot antibody time series
 anb_traj = ggplot(ab_estimates_weekly) + 
-  geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
-  geom_point(aes(x=date, y=mean), size=0.3, stroke=0, color='DodgerBlue')+
+  #geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
+  geom_pointrange(aes(x=date, y=mean, ymax=q90, ymin=q10, color=as.character(age_group_no)), size=0.3, stroke=0)+
   facet_wrap(~age_group_no, nrow=1, labeller= labeller(age_group_no = age_labs))+
-  scale_y_continuous(name='Proportion with antibodies')+
-  scale_x_date(date_labels = '%b-%y')+
+  scale_y_continuous(name='Antibody prevalence')+
+  scale_x_date(date_labels = '%b-%y', name='Date')+
+  scale_color_manual(name='Age group', values = as.vector(light(9)), labels =age_labs)+
   theme_minimal_hgrid()+
-  theme(axis.text.x = element_text(angle = 45))+
-  ggtitle('B')+
-  geom_vline(xintercept = lubridate::ymd('2021-11-09'))
+  theme(axis.text.x = element_text(angle = 45, size=10))+
+  ggtitle('B')
 
 # combine and save time series plots
 input_plot = inf_traj/anb_traj
@@ -147,7 +149,7 @@ plan(callr, workers = future::availableCores()-1)
 all_est = list()
 
 
-for(r in 1:5){ 
+for(r in c(1,4,5)){ 
   est <- future_lapply(
     dates, fit_NGM_model_for_date_range,
     age_mod = age_mod,

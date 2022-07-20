@@ -1,9 +1,11 @@
 library(cowplot)
 library(magrittr)
 library(scoringutils)
-library(ggplot2)
+#library(ggplot2)
 library(data.table)
 library(lubridate)
+library(khroma)
+library(stringr)
 
 # set dates and names of key pandemic periods
 pandemic_periods = data.table(
@@ -52,7 +54,6 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   preds_long[, horizon := as.numeric(date - forecast_date)]
   preds_long[, model := run]
   preds_to_score = preds_long[,c('sample', 'age_group', 'age_index', 'date', 'prediction', 'true_value', 'model', 'forecast_date', 'horizon')]
-  
   preds_to_score[, horizon_long := paste0(horizon/7, ' week forecast')]
   
   true_values_frame = unique(preds_to_score[sample==1,c('date', 'true_value', 'model', 'age_index')])

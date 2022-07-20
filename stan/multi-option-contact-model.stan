@@ -78,8 +78,8 @@ transformed parameters{
   
   // inf and susc vectors are calculated from the hyper parameters and unique offset parameter under NCP framework
   for(a in 1:A){
-    inf_rate[a] = inf_rate_hyper_mu + inf_rate_hyper_sd * inf_prime[a];
-    susceptibility[a] = suscept_hyper_mu + suscept_hyper_sd * sus_prime[a];
+    inf_rate[a] = exp(inf_rate_hyper_mu + inf_rate_hyper_sd * inf_prime[a]);
+    susceptibility[a] = exp(suscept_hyper_mu + suscept_hyper_sd * sus_prime[a]);
   }
   
   
