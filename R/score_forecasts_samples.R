@@ -222,7 +222,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     ggplot(score_by_fd_hz_long_rel[!(model %in% c(2,3,4,5,6)) & score_type == 'crps_rel']) + 
     geom_point(aes(x=forecast_date, y=score, color=model, alpha=0.6))+
     geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed', alpha=0.8)+
-    scale_color_discrete(name='model', labels=labels[c(1,5,6)])+
+    scale_color_manual(name='Model', labels=labels[c(1,5,6)]  , values=as.vector(vibrant(6))[c(1,5,6)])+
     scale_x_date(name='', date_labels = '%b')+
     facet_wrap(~horizon, ncol=1, labeller = labeller(age_index = age_labs),strip.position = 'right')+
     scale_y_continuous(trans = 'log2')+
@@ -245,7 +245,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     ggplot(score_by_fd_hz_long_rel[!(model %in% c(2,3,4,5,6)) & score_type == 'crps_rel' & horizon %in% c(7,28)]) + 
     geom_point(aes(x=forecast_date, y=score, color=model, alpha=0.6))+
     geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed', alpha=0.8)+
-    scale_color_discrete(name='model', labels=labels[c(1,5,6)])+
+    scale_color_manual(name='Model', labels=labels[c(1,5,6)]  , values=as.vector(vibrant(6))[c(1,5,6)])+
     scale_x_date(name='', date_labels = '%b')+
     facet_wrap(~horizon_long, ncol=1, labeller = labeller(age_index = age_labs),strip.position = 'right')+
     scale_y_continuous(trans = 'log2')+

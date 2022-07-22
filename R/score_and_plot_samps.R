@@ -1,6 +1,7 @@
 library(data.table)
 library(ggplot2)
 library(patchwork)
+library(khroma)
 source('R/score_forecasts_samples.R')
 source('R/plotting.R')
 
@@ -46,8 +47,11 @@ overall_scores_inf = summary_scores_inf$score_overall[,c('model', 'horizon', 'cr
 #                                'Fixed value baseline')]
 #
 ggplot(overall_scores_inf) + 
-  geom_point(aes(x=model, y=crps))
+  geom_point(aes(x=model, y=crps, color=horizon))
 
+
+write.csv(dcast(overall_scores_inf, formula = horizon ~ model, value.var = 'crps'), file = 'outputs/overall_infections_table.csv')
+  
 
 age_scores_inf = summary_scores_inf$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
@@ -74,20 +78,6 @@ age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)))+
   facet_wrap(~age_index, nrow=1, labeller = labeller(age_index = age_labs_inf_forward))+
-
-  geom_point(aes(x=horizon, y=crps_rel, color=model))+
-  geom_line(aes(x=horizon, y=crps_rel, color=model), linetype='dashed')+
-  geom_hline(yintercept = 1)+
-  scale_y_continuous(trans='log2', name='crps')+
-  scale_x_discrete(labels=NULL, name='')+
-  scale_color_discrete(labels=c('CoMix contact data', 
-                                'No contact data', 
-                                'No interaction',
-                                'Polymod contact data', 
-                                'Exponential baseline', 
-                                'Fixed value baseline'), 
-                       name = 'Model')+
-  facet_wrap(~age_group, nrow=1)+
 
   ggtitle("B")+
   theme_minimal()+
@@ -165,6 +155,9 @@ preds_plot_cas = outs_cas[[2]]
 scores_plot_cas = outs_cas[[3]]
 
 overall_scores_cas = summary_scores_cas$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
+
+write.csv(dcast(overall_scores_cas, formula = horizon ~ model, value.var = 'crps'), file = 'outputs/overall_cases_table.csv')
+
 
 #overall_scores_cas[, model := c('CoMix contact data', 
 #                                'No contact data', 
