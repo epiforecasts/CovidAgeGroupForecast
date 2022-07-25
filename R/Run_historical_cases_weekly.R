@@ -25,7 +25,6 @@ breaks = c(c(0),seq(9,69, 10), c(Inf))
 
 age_groups = c('0-9',  '10-19',   '20-29',  '30-39',  '40-49',  '50-59',  '60-69', '70+')
 
-<<<<<<< HEAD
 cas_traj = ggplot(case_data_age_groups[date>lubridate::ymd(20200730)]) + 
   #geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
   geom_point(aes(x=date, y=rolling_cases, color=age_group), size=1, stroke=0)+
@@ -41,8 +40,6 @@ inf_traj/anb_traj/cas_traj
 
 ggsave('plots/inputs.pdf',  width=15, height=7)
 ggsave('plots/inputs.png',  width=15, height=7, units = 'in', dpi=300)
-=======
->>>>>>> 388e18e65ed125bef9ab703a908d02038d710448
 
 case_matrix_mean  = dcast(case_data_age_groups, value.var = 'rolling_cases', date ~ age_group)
 
@@ -57,10 +54,7 @@ smax=4 # weeks
 sr_dates = readRDS('sr_dates.rds')
 
 dates = seq(as.Date("2020-11-27")-(4*7), as.Date('2021-12-02'), 14)
-<<<<<<< HEAD
-=======
 
->>>>>>> 388e18e65ed125bef9ab703a908d02038d710448
 plan(callr, workers = future::availableCores()-1)
 all_est = list()
 for(r in c(1,4,5)){ 
@@ -82,13 +76,10 @@ for(r in c(1,4,5)){
     sigma_option=1,
     contact_delay = 5, 
     forecast_horizon = 4,
-<<<<<<< HEAD
+
     ad=0.99,
     future.seed=TRUE
     
-=======
-    future.seed=TRUE
->>>>>>> 388e18e65ed125bef9ab703a908d02038d710448
   )
   
   all_est = append(all_est, est)
@@ -114,12 +105,9 @@ est <- future_lapply(
   sigma_option=1,
   contact_delay = 5, 
   forecast_horizon = 4,
-<<<<<<< HEAD
   future.seed=TRUE,
   ad=0.99
-=======
-  future.seed=TRUE
->>>>>>> 388e18e65ed125bef9ab703a908d02038d710448
+
 )
 
 all_est = append(all_est, est)
@@ -277,8 +265,6 @@ ggplot(age_scores[model != 'baseline_linex_lv',]) +
   )
 
 
-<<<<<<< HEAD
+
 plot_parameters(summary_pars, dates, '_cases')
-=======
-plot_parameters(summary_pars, d, '_cases')
->>>>>>> 388e18e65ed125bef9ab703a908d02038d710448
+
