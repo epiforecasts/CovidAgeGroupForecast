@@ -16,9 +16,7 @@ pandemic_periods = data.table(
       'Schools \nre-opened', 
       'Lockdown 2', 
       'Lockdown 2 \neasing', 
-      'Christmas', 
-      'Lockdown 3', 
-      'Lockdown 3 \nSchools Open',
+      'Christmas + Lockdown 3',
       'Lockdown 3 \neasing', 
       'Opening Up', 
       'END'), 
@@ -29,9 +27,7 @@ pandemic_periods = data.table(
       lubridate::ymd('2020-11-05'),
       lubridate::ymd('2020-12-03'),
       lubridate::ymd('2020-12-20'),
-      lubridate::ymd('2021-05-01'),
       lubridate::ymd('2021-03-09'), 
-      lubridate::ymd('2021-03-29'), 
       lubridate::ymd('2021-10-01'), 
       lubridate::ymd('2022-01-20'))
   
@@ -58,15 +54,15 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
 
   preds_to_score[, horizon_long := paste0(horizon/7, ' week forecast')]
   
-  true_values_frame = unique(preds_to_score[sample==1,c('date', 'true_value', 'model', 'age_index')])
+ 
   
   
   # create column to indicate pandemic periods 
-  preds_to_score[, periods:=cut(preds_to_score$date,
+  preds_to_score[, periods:=cut(preds_to_score$forecast_date,
                                 breaks = pandemic_periods$date_breaks, 
                                 labels = head(pandemic_periods$periods,-1))]
   
-  
+  true_values_frame = unique(preds_to_score[sample==1,c('date', 'true_value', 'model', 'age_index', 'periods')])
   preds_ranges = scoringutils:::sample_to_range_long(preds_to_score, range = c(0,50,90), keep_quantile_col = FALSE )
   
   preds_ranges = dcast(preds_ranges, formula = age_group + age_index + date + true_value + model + forecast_date +  horizon + horizon_long +  periods  + range ~ boundary, value.var = 'prediction')  
@@ -112,7 +108,48 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     
   }
   
-  full_model_alone_plot_2 = plot_predictions(horizons = c(7, 28))
+  plot_predictions_port = function(additional_models = c(), horizons = 7 * 1:4, period_include=pandemic_periods$periods){
+    
+    preds_ranges= preds_ranges[(horizon %in% horizons) & (periods %in% period_include),]
+    
+    
+    models_to_drop = setdiff(c(4,5,6), additional_models)
+    pred_plot = 
+      #plot_predictions(preds_to_score[model!='baseline_linex_lv'], by = c('age_group', 'horizon')) + 
+      ggplot()+
+      
+      geom_point(data=preds_ranges[range==0 & !(model %in% models_to_drop),], aes(x=date, y=true_value), alpha=0.8, size=1)+
+      geom_point(data=true_values_frame[(periods %in% period_include),], aes(date, true_value), shape=21, fill=NA, color='black', alpha=0.2, size=1)+
+      facet_grid(age_index~horizon_long, scale='free_y', labeller = labeller(age_index = age_labs))+
+      geom_rect(data=preds_ranges[range!=0 & !(model %in% models_to_drop),], aes(xmin=date-7, xmax=date+7, ymin=lower, ymax=upper, fill=model, alpha=range))+
+      geom_point(data=preds_ranges[range==0 & !(model %in% models_to_drop),], aes(x=date, y=lower, color=model), alpha=0.4)+
+      scale_alpha_binned(breaks=c(0.0, 0.5, 0.9, 1.0), range=c(0.5, 0.2))+
+      scale_color_manual(name='Model', labels=labels[sort(c(c(1,5,6), (additional_models-2)))]  , values=as.vector(vibrant(6))[sort(c(c(1,5,6), (additional_models-2)))]  )+
+      scale_fill_manual(name='Model', labels=labels[sort(c(c(1,5,6), (additional_models-2)))]  , values=as.vector(vibrant(6))[sort(c(c(1,5,6), (additional_models-2)))]  )+
+      scale_x_date(date_breaks = "3 months", 
+                   labels = function(x) if_else(is.na(lag(x)) | !year(lag(x)) == year(x), 
+                                                paste(month(x, label = TRUE), "\n", year(x)), 
+                                                paste(month(x, label = TRUE))))+
+      scale_y_continuous(trans='log10')+
+      xlab('')+
+      ylab(str_to_title(substr(suffix, 2, nchar(suffix))))+
+      theme_minimal_hgrid()+
+      theme(
+        plot.background = element_rect(fill = 'white'),
+        legend.position = 'bottom',
+        axis.text.x = element_text(size=9)
+      )+
+      ggtitle('A')
+    
+    return(pred_plot)
+    
+  }
+  
+  full_model_alone_plot_2 = plot_predictions_port(horizons = c(7, 28))
+  
+  christmas_plot = plot_predictions_port(additional_models = c(6), 
+                                    period_include=c('Christmas + Lockdown 3'))
+  ggsave('plots/christmasplot.png', width = 15, height=15, units='in')
   
   full_model_alone_plot = plot_predictions()
   ggsave(paste0('plots/prediction_plot', suffix, '.png'), width = 15, height = 7, units = 'in')
