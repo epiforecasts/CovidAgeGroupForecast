@@ -29,7 +29,29 @@ pandemic_periods = data.table(
       lubridate::ymd('2020-12-20'),
       lubridate::ymd('2021-03-09'), 
       lubridate::ymd('2021-10-01'), 
-      lubridate::ymd('2022-01-20'))
+      lubridate::ymd('2022-01-20')),
+  
+  start_date = 
+    c(lubridate::ymd('2020-07-30'), 
+      lubridate::ymd('2020-09-04'),
+      lubridate::ymd('2020-11-05'),
+      lubridate::ymd('2020-12-03'),
+      lubridate::ymd('2020-12-20'),
+      lubridate::ymd('2021-03-09'), 
+      lubridate::ymd('2021-10-01'), 
+      NA),
+  
+  end_date = 
+    c(
+      lubridate::ymd('2020-09-04'),
+      lubridate::ymd('2020-11-05'),
+      lubridate::ymd('2020-12-03'),
+      lubridate::ymd('2020-12-20'),
+      lubridate::ymd('2021-03-09'), 
+      lubridate::ymd('2021-10-01'), 
+      lubridate::ymd('2022-01-20'),
+      NA)
+    
   
 )
 
@@ -118,6 +140,12 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
       #plot_predictions(preds_to_score[model!='baseline_linex_lv'], by = c('age_group', 'horizon')) + 
       ggplot()+
       
+      geom_rect(data=pandemic_periods, aes(xmin=start_date, ymin=0, xmax=end_date, ymax=Inf, fill=periods), alpha=0.4)+
+      scale_fill_discrete(name='Period' )+
+      
+      ggnewscale::new_scale_fill()+
+      
+      
       geom_point(data=preds_ranges[range==0 & !(model %in% models_to_drop),], aes(x=date, y=true_value), alpha=0.8, size=1)+
       geom_point(data=true_values_frame[(periods %in% period_include),], aes(date, true_value), shape=21, fill=NA, color='black', alpha=0.2, size=1)+
       facet_grid(age_index~horizon_long, scale='free_y', labeller = labeller(age_index = age_labs))+
@@ -130,7 +158,10 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
                    labels = function(x) if_else(is.na(lag(x)) | !year(lag(x)) == year(x), 
                                                 paste(month(x, label = TRUE), "\n", year(x)), 
                                                 paste(month(x, label = TRUE))))+
-      scale_y_continuous(trans='log10')+
+      scale_y_continuous(trans='log10', labels=scales::comma)+
+      
+      
+
       xlab('')+
       ylab(str_to_title(substr(suffix, 2, nchar(suffix))))+
       theme_minimal_hgrid()+
@@ -148,8 +179,14 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   full_model_alone_plot_2 = plot_predictions_port(horizons = c(7, 28))
   
   christmas_plot = plot_predictions_port(additional_models = c(6), 
-                                    period_include=c('Christmas + Lockdown 3'))
-  ggsave('plots/christmasplot.png', width = 15, height=15, units='in')
+                                    period_include=c('Christmas + Lockdown 3', 'Lockdown 3 \neasing')) + 
+                        scale_x_date(date_breaks = "1 month", 
+                                                     labels = function(x) if_else(is.na(lag(x)) | !year(lag(x)) == year(x), 
+                                                                                  paste(month(x, label = TRUE), "\n", year(x)), 
+                                                                                  paste(month(x, label = TRUE))))
+
+  
+  ggsave(paste0('plots/christmasplot', suffix ,'.png'), width = 15, height=7, units='in')
   
   full_model_alone_plot = plot_predictions()
   ggsave(paste0('plots/prediction_plot', suffix, '.png'), width = 15, height = 7, units = 'in')
@@ -284,7 +321,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     geom_line(aes(x=forecast_date, y=score, color=model), linetype='dashed', alpha=0.8)+
     scale_color_manual(name='Model', labels=labels[c(1,5,6)]  , values=as.vector(vibrant(6))[c(1,5,6)])+
     scale_x_date(name='', date_labels = '%b')+
-    facet_wrap(~horizon_long, ncol=1, labeller = labeller(age_index = age_labs),strip.position = 'right')+
+    facet_wrap(~horizon_long, ncol=2, labeller = labeller(age_index = age_labs),strip.position = 'right')+
     scale_y_continuous(trans = 'log2')+
     theme_minimal_hgrid()+
     theme(legend.position = 'none') + 

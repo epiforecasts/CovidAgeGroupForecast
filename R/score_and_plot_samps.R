@@ -92,7 +92,7 @@ period_scores_inf = summary_scores_inf$score_by_period[,c('model', 'periods', 'h
 
 
 
-period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv',]) +
+period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv' & periods != 'Schools \nre-opened',]) +
   geom_line(aes(x=horizon, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_hline(yintercept = 1)+
@@ -115,7 +115,7 @@ period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv',]) +
   )
 
 
-period_inf_bias = ggplot(period_scores_inf[model != 'baseline_linex_lv',]) +
+period_inf_bias = ggplot(period_scores_inf[model != 'baseline_linex_lv' & periods != 'Schools \nre-opened',]) +
   geom_path(aes(x=bias, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
   geom_point(aes(x=bias, y=crps_rel, color=model, size=horizon), alpha=0.6)+
   geom_hline(yintercept=1)+
@@ -198,7 +198,7 @@ age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
 period_scores_cas = summary_scores_cas$score_by_period[,c('model', 'periods', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
 
-period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv',]) +
+period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv' & periods != 'Schools \nre-opened',]) +
   geom_line(aes(x=horizon, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_hline(yintercept = 1)+
@@ -226,7 +226,7 @@ period_inf/period_cas
 
 ggsave('plots/periods.png',width = 7, height=5, units='in')
 
-period_all_bias = ggplot(rbind(period_scores_cas[,type:='cases'], period_scores_inf[,type:='infections'])[model != 'baseline_linex_lv',]) +
+period_all_bias = ggplot(rbind(period_scores_cas[,type:='cases'], period_scores_inf[,type:='infections'])[model != 'baseline_linex_lv' & periods != 'Schools \nre-opened',]) +
   geom_path(aes(x=bias, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
   geom_point(aes(x=bias, y=crps_rel, color=model, size=horizon), alpha=0.6)+
   geom_hline(yintercept=1)+
@@ -299,11 +299,17 @@ ggsave('plots/overall_results.png', plot = overageres, width = 7, height=7, unit
 
 
 
-((preds_plot_inf + ggtitle('A'))     +  (scores_plot_inf + ggtitle('C')) + plot_layout(widths=c(4,1))) / 
-((preds_plot_cas + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6)) + ggtitle('B'))     +  (scores_plot_cas + ggtitle('D')) + plot_layout(widths=c(4,1))) / 
-guide_area()  + plot_layout(guides = 'collect', heights=c(3,3,1))
+((preds_plot_inf + ggtitle('A'))     /  (scores_plot_inf + ggtitle('C')) + plot_layout(heights=c(4,1))) + 
+((preds_plot_cas + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6)) + ggtitle('B'))     /  (scores_plot_cas + ggtitle('D')) + plot_layout(heights=c(4,1))) #/ 
+#guide_area()  + plot_layout(guides = 'collect', heights=c(3,3,1))
 
-ggsave('plots/preds_scores_both.png', width=15, height=10, units='in')
+
+(((preds_plot_inf + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6),  labels=scales::comma) + ggtitle('A')) + (preds_plot_cas + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6),  labels=scales::comma) + ggtitle('B')))     /  
+( ((scores_plot_inf + ggtitle('C')) + (scores_plot_cas + ggtitle('D'))))) / 
+guide_area()  + plot_layout(guides = 'collect', heights=c(10,2,1))
+
+
+ggsave('plots/preds_scores_both.png', width=15, height=20, units='in')
 
 
 inf_pars = readRDS('outputs/summary_pars_infweek.rds')
