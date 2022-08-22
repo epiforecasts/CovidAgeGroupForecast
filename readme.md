@@ -6,7 +6,7 @@ To run forecasts on historical dates, execute the 'run_forecasts_for_cases.r' or
 
 
 ## Introduction 
-This repository contains code that uses data from the ONS [Covid infection survey]( https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/conditionsanddiseases/bulletins/coronaviruscovid19infectionsurveypilot/previousReleases] to generate infections and uses cases directly from the [UK COVID Dashboard](https://coronavirus.data.gov.uk/) and combines with social contact data from the [CoMix](https://www.uhasselt.be/en/aparte-sites-partner-en/epipose/the-comix-study) to make weekly age stratified infection and case incidence forecasts of SARS-COV-2. 
+This repository contains code that uses data from the ONS [Covid infection survey]( https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/conditionsanddiseases/bulletins/coronaviruscovid19infectionsurveypilot/previousReleases) to generate infections and uses cases directly from the [UK COVID Dashboard](https://coronavirus.data.gov.uk/) and combines with social contact data from the [CoMix](https://www.uhasselt.be/en/aparte-sites-partner-en/epipose/the-comix-study) to make weekly age stratified infection and case incidence forecasts of SARS-COV-2. 
 
 ![Fig. I. Estimated incidence of infection and antibody prevalence by age-group to be used to fit the next generation model. ](plots/inputs.png)
 
