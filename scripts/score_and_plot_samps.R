@@ -191,14 +191,6 @@ overall_scores_cas = summary_scores_cas$score_overall[,c('model', 'horizon', 'cr
 write.csv(dcast(overall_scores_cas, formula = horizon ~ model, value.var = 'crps'), file = 'outputs/overall_cases_table.csv')
 
 
-#overall_scores_cas[, model := c('CoMix contact data', 
-#                                'No contact data', 
-#                                'No interaction',
-#                                'Polymod contact data', 
-#                                'Exponential baseline', 
-#                                'Fixed value baseline')]
-#
-
 age_scores_cas = summary_scores_cas$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel','crps_rellv', 'ae_median_rellv', 'bias')]
 
 
