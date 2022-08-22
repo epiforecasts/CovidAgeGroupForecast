@@ -53,7 +53,7 @@ ggplot(overall_scores_inf) +
 write.csv(dcast(overall_scores_inf, formula = horizon ~ model, value.var = 'crps'), file = 'outputs/overall_infections_table.csv')
   
 
-age_scores_inf = summary_scores_inf$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
+age_scores_inf = summary_scores_inf$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'crps_rellv', 'ae_median_rel', 'bias')]
 
 
 
@@ -79,6 +79,29 @@ age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
                      name = 'Model', values = as.vector(vibrant(6)))+
   facet_wrap(~age_index, nrow=1, labeller = labeller(age_index = age_labs_inf_forward))+
 
+  ggtitle("B")+
+  theme_minimal()+
+  theme(
+    axis.text.x = element_text(angle=90), 
+    legend.position = 'none'
+  )
+
+age_inf_lv = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
+  #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
+  geom_point(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
+  geom_line(aes(x=horizon, y=crps_rellv, color=model), linetype='dashed', alpha=0.8)+
+  geom_hline(yintercept = 1)+
+  scale_y_continuous(trans='log2', name='crps')+
+  scale_x_discrete(labels=NULL, name='')+
+  scale_color_manual(labels=c('CoMix contact data', 
+                              'No contact data', 
+                              'No interaction',
+                              'Polymod contact data', 
+                              'Exponential baseline', 
+                              'Fixed value baseline'), 
+                     name = 'Model', values = as.vector(vibrant(6)))+
+  facet_wrap(~age_index, nrow=1, labeller = labeller(age_index = age_labs_inf_forward))+
+  
   ggtitle("B")+
   theme_minimal()+
   theme(
@@ -167,7 +190,7 @@ write.csv(dcast(overall_scores_cas, formula = horizon ~ model, value.var = 'crps
 #                                'Fixed value baseline')]
 #
 
-age_scores_cas = summary_scores_cas$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
+age_scores_cas = summary_scores_cas$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel','crps_rellv', 'ae_median_rellv', 'bias')]
 
 
 
@@ -193,6 +216,30 @@ age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
     axis.text.x = element_text(angle=90), 
     legend.position = 'bottom'
   )
+
+age_cas_lv = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
+  #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
+  geom_point(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
+  geom_line(aes(x=horizon, y=crps_rellv, color=model), linetype='dashed', alpha=0.8)+
+  geom_hline(yintercept = 1)+
+  scale_y_continuous(trans='log2', name='crps')+
+  scale_x_discrete(labels=NULL, name='Horizon')+
+  scale_color_manual(labels=c('CoMix contact data', 
+                              'No contact data', 
+                              'No interaction',
+                              'Polymod contact data', 
+                              'Exponential baseline', 
+                              'Fixed value baseline'), 
+                     name = 'Model', values = as.vector(vibrant(6)))+
+  
+  facet_wrap(~age_group, nrow=1)+
+  ggtitle("C")+
+  theme_minimal()+
+  theme(
+    axis.text.x = element_text(angle=90), 
+    legend.position = 'bottom'
+  )
+
 
 
 period_scores_cas = summary_scores_cas$score_by_period[,c('model', 'periods', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
@@ -265,7 +312,32 @@ ggsave('plots/periods_bias.png',width = 7, height=5, units='in')
 overall_scores = rbind(overall_scores_inf[, type:='Infections'], overall_scores_cas[, type:='Cases'])
 
 overall_scores = merge(overall_scores, overall_scores[model=='baseline_expex_lv'], by = c('type', 'horizon'), suffixes = c('','_baseline'))
+overall_scores = merge(overall_scores, overall_scores[model=='baseline_last_val'], by = c('type', 'horizon'), suffixes = c('','_baselinelv'))
+
 overall_scores[, crps_rel := crps / crps_baseline]
+overall_scores[, crps_rellv := crps / crps_baselinelv]
+
+overall_scores[, c('type' ,'horizon'  ,           'model' ,     'crps', 'ae_median',         'bias',  'crps_rel' )]
+
+write.csv(overall_scores[, c('type' ,'horizon'  ,           'model' ,     'crps', 'ae_median',         'bias',  'crps_rel' )]
+, 'outputs/overall_scores_rel.csv')
+
+age_scores = rbind(age_scores_inf[, -c('age_index')][, type:='Infections'], age_scores_cas[, type:='Cases'])
+
+
+age_scores[, c('type' ,'horizon'  ,           'model' ,  'age_group',  'crps', 'ae_median',         'bias',  'crps_rel' )]
+
+write.csv(age_scores[, c('type' ,'horizon'  ,           'model' , 'age_group',    'crps_rel'   ,      'bias')]
+          , 'outputs/age_scores_rel.csv')
+
+period_scores = rbind(period_scores_inf[, type:='Infections'], period_scores_cas[, type:='Cases'])
+
+
+period_scores[, c('type' ,'horizon'  ,           'model' ,  'age_group',  'crps', 'ae_median',         'bias',  'crps_rel' )]
+
+write.csv(period_scores[, c('type' ,'horizon'  ,           'model' , 'periods',   'crps_rel'   ,      'bias')]
+          , 'outputs/period_scores_rel.csv')
+
 
 overall_sp = 
   ggplot(overall_scores) + 
@@ -291,11 +363,41 @@ overall_sp =
     legend.position = 'bottom'
   )
 
+overall_sp_lv = 
+  ggplot(overall_scores) + 
+  #geom_curve(aes(x=model, xend=model, y=1, yend=crps_rel+horizon*0.00001, size=exp(horizon/7)), alpha=0.3, curvature = 0.15)+
+  geom_path(aes(x=bias, y=crps_rellv, color=model), alpha=0.7)+
+  geom_point(aes(x=bias, y=crps_rellv, color=model, size=horizon), alpha=0.7)+
+  geom_hline(yintercept = 1, alpha=0.5)+
+  geom_vline(xintercept = 0, alpha=0.5)+
+  facet_wrap(~type)+
+  scale_color_manual(labels=c('CoMix contact data', 
+                              'No contact data', 
+                              'No interaction',
+                              'Polymod contact data', 
+                              'Exponential baseline', 
+                              'Fixed value baseline'), 
+                     name = 'Model', values = as.vector(vibrant(6)), guide='none')+
+  scale_size(breaks = c(0,7,14,21,28))+
+  scale_y_continuous(trans='log2', name='crps')+
+  theme_minimal()+
+  ggtitle('A')+
+  theme(
+    axis.text.x = element_text(angle=90), 
+    legend.position = 'bottom'
+  )
+
 overageres = overall_sp / age_inf / age_cas + plot_layout(heights = c(2,1,1))
+overageres_lv = overall_sp_lv / age_inf_lv / age_cas_lv + plot_layout(heights = c(2,1,1))
+
+
+age_inf / age_cas
 
 ggsave('plots/overall_results.pdf', plot = overageres, width = 7, height=7, units = 'in')
 ggsave('plots/overall_results.png', plot = overageres, width = 7, height=7, units = 'in', dpi=300)
 
+ggsave('plots/overall_results_lv.pdf', plot = overageres_lv, width = 7, height=7, units = 'in')
+ggsave('plots/overall_results_lv.png', plot = overageres_lv, width = 7, height=7, units = 'in', dpi=300)
 
 
 

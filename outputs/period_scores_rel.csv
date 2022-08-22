@@ -1,0 +1,385 @@
+"","type","horizon","model","periods","crps_rel","bias"
+"1","Infections",7,"1",NA,0.309529006907514,-0.16
+"2","Infections",7,"4",NA,0.350949978477456,-0.242857142857143
+"3","Infections",7,"5",NA,0.716905575456276,-0.22
+"4","Infections",7,"6",NA,0.34556253387026,0.302857142857143
+"5","Infections",7,"baseline_last_val",NA,0.690944859844705,-0.714285714285714
+"6","Infections",7,"baseline_expex_lv",NA,1,-0.142857142857143
+"7","Infections",14,"1",NA,0.423163760716107,0.38
+"8","Infections",14,"4",NA,0.498020397583145,0.208571428571429
+"9","Infections",14,"5",NA,0.79164351790896,0.0457142857142857
+"10","Infections",14,"6",NA,0.565682616579345,0.671428571428571
+"11","Infections",14,"baseline_last_val",NA,0.507399823314326,-0.142857142857143
+"12","Infections",14,"baseline_expex_lv",NA,1,-0.142857142857143
+"13","Infections",21,"1",NA,0.885094770036822,0.994285714285714
+"14","Infections",21,"4",NA,0.911324353586033,0.971428571428571
+"15","Infections",21,"5",NA,0.916245125881395,0.434285714285714
+"16","Infections",21,"6",NA,1.24070850305623,1
+"17","Infections",21,"baseline_last_val",NA,0.489705566832132,0.714285714285714
+"18","Infections",21,"baseline_expex_lv",NA,1,0.428571428571429
+"19","Infections",28,"1",NA,0.968390653693715,0.994285714285714
+"20","Infections",28,"4",NA,1.00967791091352,0.985714285714286
+"21","Infections",28,"5",NA,0.931526063353873,0.505714285714286
+"22","Infections",28,"6",NA,1.4694603868212,1
+"23","Infections",28,"baseline_last_val",NA,0.450536363017664,0.714285714285714
+"24","Infections",28,"baseline_expex_lv",NA,1,0.428571428571429
+"25","Infections",7,"1","Lockdown 2",0.909586973379307,0.26
+"26","Infections",7,"4","Lockdown 2",0.805231441450016,0.114285714285714
+"27","Infections",7,"5","Lockdown 2",0.844224230936276,0.00428571428571428
+"28","Infections",7,"6","Lockdown 2",0.981240982004414,0.258571428571429
+"29","Infections",7,"baseline_last_val","Lockdown 2",0.8826650946284,0.142857142857143
+"30","Infections",7,"baseline_expex_lv","Lockdown 2",1,0
+"31","Infections",14,"1","Lockdown 2",0.676622981488659,0.0685714285714286
+"32","Infections",14,"4","Lockdown 2",0.674741238905914,-0.168571428571429
+"33","Infections",14,"5","Lockdown 2",0.793114316784981,-0.0971428571428571
+"34","Infections",14,"6","Lockdown 2",0.784672926575432,0.165714285714286
+"35","Infections",14,"baseline_last_val","Lockdown 2",0.657908497513832,0
+"36","Infections",14,"baseline_expex_lv","Lockdown 2",1,0
+"37","Infections",21,"1","Lockdown 2",0.835197700362037,-0.182857142857143
+"38","Infections",21,"4","Lockdown 2",0.866363278790761,-0.442857142857143
+"39","Infections",21,"5","Lockdown 2",0.914723327252008,-0.43
+"40","Infections",21,"6","Lockdown 2",0.939818152841202,-0.0514285714285714
+"41","Infections",21,"baseline_last_val","Lockdown 2",0.809721555514926,-0.571428571428571
+"42","Infections",21,"baseline_expex_lv","Lockdown 2",1,-0.428571428571429
+"43","Infections",28,"1","Lockdown 2",0.852703381395595,-0.235714285714286
+"44","Infections",28,"4","Lockdown 2",0.932890394899875,-0.574285714285714
+"45","Infections",28,"5","Lockdown 2",0.951869663686146,-0.58
+"46","Infections",28,"6","Lockdown 2",0.983566804076737,-0.18
+"47","Infections",28,"baseline_last_val","Lockdown 2",0.875698163819695,-0.714285714285714
+"48","Infections",28,"baseline_expex_lv","Lockdown 2",1,-0.428571428571429
+"49","Infections",7,"1","Lockdown 2 
+easing",0.895182713700536,-1
+"50","Infections",7,"4","Lockdown 2 
+easing",0.860995507775672,-0.922857142857143
+"51","Infections",7,"5","Lockdown 2 
+easing",0.96121593198646,-0.691428571428571
+"52","Infections",7,"6","Lockdown 2 
+easing",0.922651497489923,-1
+"53","Infections",7,"baseline_last_val","Lockdown 2 
+easing",1.25781718580449,-1
+"54","Infections",7,"baseline_expex_lv","Lockdown 2 
+easing",1,-0.714285714285714
+"55","Infections",14,"1","Lockdown 2 
+easing",0.653346042002784,-0.697142857142857
+"56","Infections",14,"4","Lockdown 2 
+easing",0.711650151185331,-0.474285714285714
+"57","Infections",14,"5","Lockdown 2 
+easing",0.879840022885926,-0.48
+"58","Infections",14,"6","Lockdown 2 
+easing",0.66336134746751,-0.68
+"59","Infections",14,"baseline_last_val","Lockdown 2 
+easing",1.00058907608678,-0.714285714285714
+"60","Infections",14,"baseline_expex_lv","Lockdown 2 
+easing",1,-0.142857142857143
+"61","Infections",21,"1","Lockdown 2 
+easing",0.227433741242967,-0.211428571428571
+"62","Infections",21,"4","Lockdown 2 
+easing",0.344184165442876,0
+"63","Infections",21,"5","Lockdown 2 
+easing",0.603383084274402,1.58603289232165e-17
+"64","Infections",21,"6","Lockdown 2 
+easing",0.242936327408474,-0.222857142857143
+"65","Infections",21,"baseline_last_val","Lockdown 2 
+easing",0.552870899309495,-0.428571428571429
+"66","Infections",21,"baseline_expex_lv","Lockdown 2 
+easing",1,0.142857142857143
+"67","Infections",28,"1","Lockdown 2 
+easing",0.114834572105461,0.408571428571429
+"68","Infections",28,"4","Lockdown 2 
+easing",0.240303805266681,0.745714285714286
+"69","Infections",28,"5","Lockdown 2 
+easing",0.497958916722871,0.154285714285714
+"70","Infections",28,"6","Lockdown 2 
+easing",0.116984035769329,0.328571428571429
+"71","Infections",28,"baseline_last_val","Lockdown 2 
+easing",0.313811750773373,-0.428571428571429
+"72","Infections",28,"baseline_expex_lv","Lockdown 2 
+easing",1,0.142857142857143
+"73","Infections",7,"1","Christmas + Lockdown 3",0.446495844850567,0.16
+"74","Infections",7,"4","Christmas + Lockdown 3",0.705022977908347,0.193809523809524
+"75","Infections",7,"5","Christmas + Lockdown 3",0.771146621749619,0.0547619047619048
+"76","Infections",7,"6","Christmas + Lockdown 3",0.615959867383804,0.321428571428571
+"77","Infections",7,"baseline_last_val","Christmas + Lockdown 3",0.789403379534962,0.523809523809524
+"78","Infections",7,"baseline_expex_lv","Christmas + Lockdown 3",1,-0.0476190476190476
+"79","Infections",14,"1","Christmas + Lockdown 3",0.228768573545182,-0.0428571428571429
+"80","Infections",14,"4","Christmas + Lockdown 3",0.680747036278605,0.16047619047619
+"81","Infections",14,"5","Christmas + Lockdown 3",0.773076174520331,0.0266666666666667
+"82","Infections",14,"6","Christmas + Lockdown 3",0.441659987544095,0.24047619047619
+"83","Infections",14,"baseline_last_val","Christmas + Lockdown 3",0.6524457128956,0.571428571428571
+"84","Infections",14,"baseline_expex_lv","Christmas + Lockdown 3",1,0
+"85","Infections",21,"1","Christmas + Lockdown 3",0.160077825717731,-0.0495238095238095
+"86","Infections",21,"4","Christmas + Lockdown 3",0.664007460975592,0.132857142857143
+"87","Infections",21,"5","Christmas + Lockdown 3",0.761250209094364,0.0395238095238095
+"88","Infections",21,"6","Christmas + Lockdown 3",0.395631858708333,0.240952380952381
+"89","Infections",21,"baseline_last_val","Christmas + Lockdown 3",0.568429722679806,0.761904761904762
+"90","Infections",21,"baseline_expex_lv","Christmas + Lockdown 3",1,0.0952380952380952
+"91","Infections",28,"1","Christmas + Lockdown 3",0.0938402934571691,0.232857142857143
+"92","Infections",28,"4","Christmas + Lockdown 3",0.645361608145327,0.172857142857143
+"93","Infections",28,"5","Christmas + Lockdown 3",0.733378639578042,-0.00428571428571428
+"94","Infections",28,"6","Christmas + Lockdown 3",0.373775167795113,0.278571428571429
+"95","Infections",28,"baseline_last_val","Christmas + Lockdown 3",0.522851216109327,0.857142857142857
+"96","Infections",28,"baseline_expex_lv","Christmas + Lockdown 3",1,0.0952380952380952
+"97","Infections",7,"1","Lockdown 3 
+easing",0.763430957297337,0.0555102040816327
+"98","Infections",7,"4","Lockdown 3 
+easing",0.740640968843361,0.0238775510204082
+"99","Infections",7,"5","Lockdown 3 
+easing",0.803091831266163,-0.0638775510204082
+"100","Infections",7,"6","Lockdown 3 
+easing",0.833747703413344,-0.0593877551020408
+"101","Infections",7,"baseline_last_val","Lockdown 3 
+easing",0.872591963405863,-0.163265306122449
+"102","Infections",7,"baseline_expex_lv","Lockdown 3 
+easing",1,0.0408163265306122
+"103","Infections",14,"1","Lockdown 3 
+easing",0.483212426125614,0.013265306122449
+"104","Infections",14,"4","Lockdown 3 
+easing",0.580435250903,0.0177551020408163
+"105","Infections",14,"5","Lockdown 3 
+easing",0.715087977143702,-0.00877551020408163
+"106","Infections",14,"6","Lockdown 3 
+easing",0.563332170007603,-0.107142857142857
+"107","Infections",14,"baseline_last_val","Lockdown 3 
+easing",0.571589397011482,-0.102040816326531
+"108","Infections",14,"baseline_expex_lv","Lockdown 3 
+easing",1,0.0612244897959184
+"109","Infections",21,"1","Lockdown 3 
+easing",0.412452534362821,0.0210204081632653
+"110","Infections",21,"4","Lockdown 3 
+easing",0.534873793963978,-0.0281632653061224
+"111","Infections",21,"5","Lockdown 3 
+easing",0.679686720830718,-0.0222448979591837
+"112","Infections",21,"6","Lockdown 3 
+easing",0.497297549074967,-0.126530612244898
+"113","Infections",21,"baseline_last_val","Lockdown 3 
+easing",0.412331180464624,-0.142857142857143
+"114","Infections",21,"baseline_expex_lv","Lockdown 3 
+easing",1,0.0408163265306122
+"115","Infections",28,"1","Lockdown 3 
+easing",0.356311550985923,-0.0516326530612245
+"116","Infections",28,"4","Lockdown 3 
+easing",0.494237049493513,-0.126326530612245
+"117","Infections",28,"5","Lockdown 3 
+easing",0.636812954585513,-0.0842857142857143
+"118","Infections",28,"6","Lockdown 3 
+easing",0.438690574397176,-0.126530612244898
+"119","Infections",28,"baseline_last_val","Lockdown 3 
+easing",0.289294387470409,-0.26530612244898
+"120","Infections",28,"baseline_expex_lv","Lockdown 3 
+easing",1,-0.0408163265306122
+"121","Infections",7,"1","Opening Up",0.806487036751832,-0.0342857142857143
+"122","Infections",7,"4","Opening Up",0.684422903362531,0.0285714285714286
+"123","Infections",7,"5","Opening Up",0.695980189358916,-0.108571428571429
+"124","Infections",7,"6","Opening Up",0.912215914204586,0.00342857142857143
+"125","Infections",7,"baseline_last_val","Opening Up",0.712745833896916,-0.142857142857143
+"126","Infections",7,"baseline_expex_lv","Opening Up",1,-0.0285714285714286
+"127","Infections",14,"1","Opening Up",0.739742452005849,-0.299428571428571
+"128","Infections",14,"4","Opening Up",0.677861383468972,-0.253714285714286
+"129","Infections",14,"5","Opening Up",0.722250721092629,-0.258857142857143
+"130","Infections",14,"6","Opening Up",0.785277710248449,-0.246857142857143
+"131","Infections",14,"baseline_last_val","Opening Up",0.65185574433729,-0.314285714285714
+"132","Infections",14,"baseline_expex_lv","Opening Up",1,-0.142857142857143
+"133","Infections",21,"1","Opening Up",0.762196495846938,-0.333714285714286
+"134","Infections",21,"4","Opening Up",0.774347847186748,-0.164
+"135","Infections",21,"5","Opening Up",0.776786466992812,-0.247428571428571
+"136","Infections",21,"6","Opening Up",0.797142785203047,-0.337714285714286
+"137","Infections",21,"baseline_last_val","Opening Up",0.695798228218623,-0.257142857142857
+"138","Infections",21,"baseline_expex_lv","Opening Up",1,-0.2
+"139","Infections",28,"1","Opening Up",0.744894948092188,-0.212571428571429
+"140","Infections",28,"4","Opening Up",0.807745785234731,-0.128
+"141","Infections",28,"5","Opening Up",0.800690283819474,-0.153714285714286
+"142","Infections",28,"6","Opening Up",0.765618868090181,-0.229142857142857
+"143","Infections",28,"baseline_last_val","Opening Up",0.674494098726256,-0.428571428571429
+"144","Infections",28,"baseline_expex_lv","Opening Up",1,-0.0285714285714286
+"145","Cases",7,"1",NA,2.90858860066751,0.5325
+"146","Cases",7,"4",NA,0.59715747099948,0.4675
+"147","Cases",7,"5",NA,0.674503340568204,0.14
+"148","Cases",7,"6",NA,5.76394761387422,0.8625
+"149","Cases",7,"baseline_last_val",NA,1.50399289985589,-1
+"150","Cases",7,"baseline_expex_lv",NA,1,-0.75
+"151","Cases",14,"1",NA,2.38754099140029,0.7725
+"152","Cases",14,"4",NA,0.507562728614131,0.4425
+"153","Cases",14,"5",NA,0.849282335398672,0.2025
+"154","Cases",14,"6",NA,5.55745834239813,0.9925
+"155","Cases",14,"baseline_last_val",NA,1.48437441330107,-1
+"156","Cases",14,"baseline_expex_lv",NA,1,-0.5
+"157","Cases",21,"1",NA,2.8970098318307,1
+"158","Cases",21,"4",NA,1.48408534396456,0.965
+"159","Cases",21,"5",NA,1.39038484800077,0.59
+"160","Cases",21,"6",NA,5.46206868853633,1
+"161","Cases",21,"baseline_last_val",NA,0.425051046975904,0.25
+"162","Cases",21,"baseline_expex_lv",NA,1,0.5
+"163","Cases",28,"1",NA,2.74725840358492,1
+"164","Cases",28,"4",NA,1.58564293771719,1
+"165","Cases",28,"5",NA,1.37366982267257,0.75
+"166","Cases",28,"6",NA,5.09985968744752,1
+"167","Cases",28,"baseline_last_val",NA,0.547046322465477,0.75
+"168","Cases",28,"baseline_expex_lv",NA,1,0.75
+"169","Cases",7,"1","Lockdown 2",0.751471087035699,0.5
+"170","Cases",7,"4","Lockdown 2",0.763674671942871,0.03125
+"171","Cases",7,"5","Lockdown 2",0.805608942909467,-0.0025
+"172","Cases",7,"6","Lockdown 2",1.28733612490787,0.68875
+"173","Cases",7,"baseline_last_val","Lockdown 2",0.527907976759409,0.875
+"174","Cases",7,"baseline_expex_lv","Lockdown 2",1,0
+"175","Cases",14,"1","Lockdown 2",0.739398352691907,0.035
+"176","Cases",14,"4","Lockdown 2",0.846277998996311,0
+"177","Cases",14,"5","Lockdown 2",0.855929945137701,0
+"178","Cases",14,"6","Lockdown 2",1.08840742030786,0.50375
+"179","Cases",14,"baseline_last_val","Lockdown 2",0.531307036995378,0
+"180","Cases",14,"baseline_expex_lv","Lockdown 2",1,0
+"181","Cases",21,"1","Lockdown 2",0.821458335002206,0
+"182","Cases",21,"4","Lockdown 2",0.893449326547448,0
+"183","Cases",21,"5","Lockdown 2",0.88689165578766,0
+"184","Cases",21,"6","Lockdown 2",1.00440992647882,0.1275
+"185","Cases",21,"baseline_last_val","Lockdown 2",0.596674470579478,0
+"186","Cases",21,"baseline_expex_lv","Lockdown 2",1,0
+"187","Cases",28,"1","Lockdown 2",0.842441991366397,0.00125
+"188","Cases",28,"4","Lockdown 2",0.894895469120013,0
+"189","Cases",28,"5","Lockdown 2",0.877041489343594,-0.00375
+"190","Cases",28,"6","Lockdown 2",1.14884583867952,0.16
+"191","Cases",28,"baseline_last_val","Lockdown 2",0.538062046829984,-0.125
+"192","Cases",28,"baseline_expex_lv","Lockdown 2",1,0
+"193","Cases",7,"1","Lockdown 2 
+easing",1.17727809301651,-1
+"194","Cases",7,"4","Lockdown 2 
+easing",1.58737866944692,-1
+"195","Cases",7,"5","Lockdown 2 
+easing",1.42978680247716,-1
+"196","Cases",7,"6","Lockdown 2 
+easing",1.50965312080917,-1
+"197","Cases",7,"baseline_last_val","Lockdown 2 
+easing",1.82012864501822,-1
+"198","Cases",7,"baseline_expex_lv","Lockdown 2 
+easing",1,-1
+"199","Cases",14,"1","Lockdown 2 
+easing",1.37877579767612,-0.89
+"200","Cases",14,"4","Lockdown 2 
+easing",2.30318742441798,-0.9975
+"201","Cases",14,"5","Lockdown 2 
+easing",1.89718096614948,-0.9125
+"202","Cases",14,"6","Lockdown 2 
+easing",2.13024809855874,-1
+"203","Cases",14,"baseline_last_val","Lockdown 2 
+easing",2.70484705719411,-1
+"204","Cases",14,"baseline_expex_lv","Lockdown 2 
+easing",1,-0.75
+"205","Cases",21,"1","Lockdown 2 
+easing",1.38688369039158,-0.99
+"206","Cases",21,"4","Lockdown 2 
+easing",1.95492433015728,-1
+"207","Cases",21,"5","Lockdown 2 
+easing",1.69412470412465,-0.99
+"208","Cases",21,"6","Lockdown 2 
+easing",1.87731076594454,-1
+"209","Cases",21,"baseline_last_val","Lockdown 2 
+easing",2.19949900820594,-1
+"210","Cases",21,"baseline_expex_lv","Lockdown 2 
+easing",1,-0.75
+"211","Cases",28,"1","Lockdown 2 
+easing",1.63202270391138,-0.9575
+"212","Cases",28,"4","Lockdown 2 
+easing",2.53071654288965,-1
+"213","Cases",28,"5","Lockdown 2 
+easing",2.11973073778909,-0.9675
+"214","Cases",28,"6","Lockdown 2 
+easing",2.43650403949503,-1
+"215","Cases",28,"baseline_last_val","Lockdown 2 
+easing",2.9359230911276,-1
+"216","Cases",28,"baseline_expex_lv","Lockdown 2 
+easing",1,-0.5
+"217","Cases",7,"1","Christmas + Lockdown 3",1.05390343150663,0.319583333333333
+"218","Cases",7,"4","Christmas + Lockdown 3",1.02638205023323,0.23125
+"219","Cases",7,"5","Christmas + Lockdown 3",1.47372171820755,-0.15125
+"220","Cases",7,"6","Christmas + Lockdown 3",1.46040008638422,0.422916666666667
+"221","Cases",7,"baseline_last_val","Christmas + Lockdown 3",1.26034048001718,0.583333333333333
+"222","Cases",7,"baseline_expex_lv","Christmas + Lockdown 3",1,0.291666666666667
+"223","Cases",14,"1","Christmas + Lockdown 3",1.08066872355719,0.349583333333333
+"224","Cases",14,"4","Christmas + Lockdown 3",1.08946687139842,0.1725
+"225","Cases",14,"5","Christmas + Lockdown 3",0.799528466229528,-0.19875
+"226","Cases",14,"6","Christmas + Lockdown 3",1.63620839067249,0.440833333333333
+"227","Cases",14,"baseline_last_val","Christmas + Lockdown 3",1.27713588332324,0.583333333333333
+"228","Cases",14,"baseline_expex_lv","Christmas + Lockdown 3",1,0.0833333333333333
+"229","Cases",21,"1","Christmas + Lockdown 3",0.785517332051677,0.288333333333333
+"230","Cases",21,"4","Christmas + Lockdown 3",1.28527746820273,0.289166666666667
+"231","Cases",21,"5","Christmas + Lockdown 3",0.615934231147576,-0.0754166666666667
+"232","Cases",21,"6","Christmas + Lockdown 3",1.46970267104724,0.539583333333333
+"233","Cases",21,"baseline_last_val","Christmas + Lockdown 3",0.961729475418792,0.583333333333333
+"234","Cases",21,"baseline_expex_lv","Christmas + Lockdown 3",1,0.25
+"235","Cases",28,"1","Christmas + Lockdown 3",0.553238390448797,0.32125
+"236","Cases",28,"4","Christmas + Lockdown 3",1.35752777248486,0.356666666666667
+"237","Cases",28,"5","Christmas + Lockdown 3",0.568138124274263,-0.00125000000000001
+"238","Cases",28,"6","Christmas + Lockdown 3",1.40204922798681,0.671666666666667
+"239","Cases",28,"baseline_last_val","Christmas + Lockdown 3",0.721674488836576,0.708333333333333
+"240","Cases",28,"baseline_expex_lv","Christmas + Lockdown 3",1,0.375
+"241","Cases",7,"1","Lockdown 3 
+easing",1.66565622060893,-0.0941071428571428
+"242","Cases",7,"4","Lockdown 3 
+easing",0.951653718257586,-0.254285714285714
+"243","Cases",7,"5","Lockdown 3 
+easing",0.86654840237359,-0.324107142857143
+"244","Cases",7,"6","Lockdown 3 
+easing",1.99159118783398,-0.180357142857143
+"245","Cases",7,"baseline_last_val","Lockdown 3 
+easing",1.57139509794382,-0.0714285714285714
+"246","Cases",7,"baseline_expex_lv","Lockdown 3 
+easing",1,-0.339285714285714
+"247","Cases",14,"1","Lockdown 3 
+easing",1.12677333077188,-0.00696428571428571
+"248","Cases",14,"4","Lockdown 3 
+easing",0.886321853549987,-0.123392857142857
+"249","Cases",14,"5","Lockdown 3 
+easing",0.897167410500539,-0.143214285714286
+"250","Cases",14,"6","Lockdown 3 
+easing",1.62236385747987,-0.100714285714286
+"251","Cases",14,"baseline_last_val","Lockdown 3 
+easing",0.901334496141403,-0.142857142857143
+"252","Cases",14,"baseline_expex_lv","Lockdown 3 
+easing",1,-0.178571428571429
+"253","Cases",21,"1","Lockdown 3 
+easing",1.08522796808855,-0.0978571428571429
+"254","Cases",21,"4","Lockdown 3 
+easing",0.878493779896532,-0.154464285714286
+"255","Cases",21,"5","Lockdown 3 
+easing",0.883673861274883,-0.218392857142857
+"256","Cases",21,"6","Lockdown 3 
+easing",1.62236600937069,-0.193571428571429
+"257","Cases",21,"baseline_last_val","Lockdown 3 
+easing",0.776581349582475,-0.107142857142857
+"258","Cases",21,"baseline_expex_lv","Lockdown 3 
+easing",1,-0.267857142857143
+"259","Cases",28,"1","Lockdown 3 
+easing",0.840241310590259,-0.0185714285714286
+"260","Cases",28,"4","Lockdown 3 
+easing",0.822477060290985,-0.0682142857142857
+"261","Cases",28,"5","Lockdown 3 
+easing",0.847447869060112,-0.232142857142857
+"262","Cases",28,"6","Lockdown 3 
+easing",1.29703104860747,-0.109107142857143
+"263","Cases",28,"baseline_last_val","Lockdown 3 
+easing",0.521599295783249,-0.160714285714286
+"264","Cases",28,"baseline_expex_lv","Lockdown 3 
+easing",1,-0.25
+"265","Cases",7,"1","Opening Up",1.35973816395193,-0.136
+"266","Cases",7,"4","Opening Up",0.843675692167715,-0.0605
+"267","Cases",7,"5","Opening Up",0.865032361711928,-0.0415
+"268","Cases",7,"6","Opening Up",1.66710617763978,-0.1965
+"269","Cases",7,"baseline_last_val","Opening Up",1.18685545686916,-0.45
+"270","Cases",7,"baseline_expex_lv","Opening Up",1,-0.1
+"271","Cases",14,"1","Opening Up",0.772171830388367,-0.109
+"272","Cases",14,"4","Opening Up",0.740085046734319,-0.0195
+"273","Cases",14,"5","Opening Up",0.789744996886365,-0.0115
+"274","Cases",14,"6","Opening Up",0.880239955256989,-0.0885
+"275","Cases",14,"baseline_last_val","Opening Up",0.788712019553122,-0.45
+"276","Cases",14,"baseline_expex_lv","Opening Up",1,-0.05
+"277","Cases",21,"1","Opening Up",0.759183654867671,-0.143
+"278","Cases",21,"4","Opening Up",0.760561054778249,-0.2255
+"279","Cases",21,"5","Opening Up",0.848860187117068,-0.149
+"280","Cases",21,"6","Opening Up",0.738582379550975,-0.0865
+"281","Cases",21,"baseline_last_val","Opening Up",0.746109839815606,-0.4
+"282","Cases",21,"baseline_expex_lv","Opening Up",1,-0.2
+"283","Cases",28,"1","Opening Up",0.800687845258458,-0.091
+"284","Cases",28,"4","Opening Up",0.793801191514041,-0.192
+"285","Cases",28,"5","Opening Up",0.872989148419974,-0.1285
+"286","Cases",28,"6","Opening Up",0.69294630701101,-0.1185
+"287","Cases",28,"baseline_last_val","Opening Up",0.726437138048493,-0.55
+"288","Cases",28,"baseline_expex_lv","Opening Up",1,-0.2

@@ -12,18 +12,16 @@ library(stringr)
 pandemic_periods = data.table(
   
   periods = 
-    c('Light \nRestrictions', 
-      'Schools \nre-opened', 
+    c(
       'Lockdown 2', 
       'Lockdown 2 \neasing', 
-      'Christmas + Lockdown 3',
+      'Christmas + \nLockdown 3',
       'Lockdown 3 \neasing', 
       'Opening Up', 
       'END'), 
   
   date_breaks = 
-    c(lubridate::ymd('2020-07-30'), 
-      lubridate::ymd('2020-09-04'),
+    c(
       lubridate::ymd('2020-11-05'),
       lubridate::ymd('2020-12-03'),
       lubridate::ymd('2020-12-20'),
@@ -32,8 +30,7 @@ pandemic_periods = data.table(
       lubridate::ymd('2022-01-20')),
   
   start_date = 
-    c(lubridate::ymd('2020-07-30'), 
-      lubridate::ymd('2020-09-04'),
+    c(
       lubridate::ymd('2020-11-05'),
       lubridate::ymd('2020-12-03'),
       lubridate::ymd('2020-12-20'),
@@ -43,8 +40,7 @@ pandemic_periods = data.table(
   
   end_date = 
     c(
-      lubridate::ymd('2020-09-04'),
-      lubridate::ymd('2020-11-05'),
+      
       lubridate::ymd('2020-12-03'),
       lubridate::ymd('2020-12-20'),
       lubridate::ymd('2021-03-09'), 
@@ -122,7 +118,8 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     theme(
       plot.background = element_rect(fill = 'white'),
       legend.position = 'bottom',
-      axis.text.x = element_text(size=9)
+      axis.text.x = element_text(size=9),
+      legend.box = 'vertical'
     )+
     ggtitle('A')
     
@@ -140,8 +137,12 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
       #plot_predictions(preds_to_score[model!='baseline_linex_lv'], by = c('age_group', 'horizon')) + 
       ggplot()+
       
-      geom_rect(data=pandemic_periods, aes(xmin=start_date, ymin=0, xmax=end_date, ymax=Inf, fill=periods), alpha=0.4)+
-      scale_fill_discrete(name='Period' )+
+      geom_rect(data=pandemic_periods[periods %in% period_include, `:=` (plot_start =  max(start_date, min(preds_ranges$forecast_date)), plot_end = min(end_date, max(preds_ranges$date))) ], 
+                aes(xmin=start_date, 
+                    ymin=0, xmax=end_date, 
+                    ymax=200, fill=periods), 
+                alpha=0.4)+
+      scale_fill_discrete(name='Period')+
       
       ggnewscale::new_scale_fill()+
       
@@ -168,8 +169,8 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
       theme(
         plot.background = element_rect(fill = 'white'),
         legend.position = 'bottom',
-        axis.text.x = element_text(size=9)
-      )+
+        axis.text.x = element_text(size=9), 
+        legend.box = 'virtical')+
       ggtitle('A')
     
     return(pred_plot)
@@ -179,7 +180,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   full_model_alone_plot_2 = plot_predictions_port(horizons = c(7, 28))
   
   christmas_plot = plot_predictions_port(additional_models = c(6), 
-                                    period_include=c('Christmas + Lockdown 3', 'Lockdown 3 \neasing')) + 
+                                    period_include=c('Christmas + \nLockdown 3', 'Lockdown 3 \neasing')) + 
                         scale_x_date(date_breaks = "1 month", 
                                                      labels = function(x) if_else(is.na(lag(x)) | !year(lag(x)) == year(x), 
                                                                                   paste(month(x, label = TRUE), "\n", year(x)), 
@@ -451,29 +452,40 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   
   score_age_rel = merge(score_age, score_age[model=='baseline_expex_lv', ], by = c('age_group', 'horizon'), suffixes = c('', '_baseline'))
+  score_age_rel = merge(score_age_rel, score_age[model=='baseline_last_val', ], by = c('age_group', 'horizon'), suffixes = c('', '_baselinelv'))
+  
   score_age_rel[,
                    c(
                      'crps_rel', 
-                     'ae_median_rel'
+                     'ae_median_rel',
+                     'crps_rellv', 
+                     'ae_median_rellv'
                    ) 
                    :=
                      list(
                        crps/crps_baseline,
-                       ae_median/ae_median_baseline
+                       ae_median/ae_median_baseline,
+                       crps/crps_baselinelv,
+                       ae_median/ae_median_baselinelv
                      )
   ]
   
   
   score_period_rel = merge(score_by_period, score_by_period[model=='baseline_expex_lv', ], by = c('periods', 'horizon'), suffixes = c('', '_baseline'))
+  score_period_rel = merge(score_period_rel, score_by_period[model=='baseline_last_val', ], by = c('periods', 'horizon'), suffixes = c('', '_baselinelv'))
   score_period_rel[,
                 c(
                   'crps_rel', 
-                  'ae_median_rel'
+                  'ae_median_rel',
+                  'crps_rellv', 
+                  'ae_median_rellv'
                 ) 
                 :=
                   list(
                     crps/crps_baseline,
-                    ae_median/ae_median_baseline
+                    ae_median/ae_median_baseline,
+                    crps/crps_baselinelv,
+                    ae_median/ae_median_baselinelv
                   )
   ]
   
