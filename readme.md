@@ -34,7 +34,7 @@ The models are further compared to two nieve baselines
 1. With the prediction set as equal to the forecast date 
 2. With the prediction set to be an exponential extrapolation of the previous two weeks
 
-Also included is a script that scores and plots information about the performance of the forecasts the script focuses on the CRPS and Bias of the forecasts as calculated using the [scoringutils](github.com/epiforecasts/scoringutils) package.
+Also included is a script that scores and plots information about the performance of the forecasts the script focuses on the CRPS and Bias of the forecasts as calculated using the [scoringutils](https://github.com/epiforecasts/scoringutils) package.
 
 ## Example results
 
