@@ -7,7 +7,7 @@ library(tidyverse)
 
 
 make_case_weekly = function(){
-  case_data = fread(file = '../nation_2022-05-10.csv')
+  case_data = fread(file = 'data/nation_2022-05-10.csv')
   select_age_groups = c("00_04",  "05_09", "10_14",  "15_19", "20_24", "25_29", "30_34", "35_39", "40_44", "45_49", "50_54", "55_59", "60_64", "65_69", "70_74", "75_79", "80_84", "85_89", "90+")
   case_data_ages = case_data[age %in% select_age_groups, ]
   case_data_ages[, lower_age := as.integer(substr(age, 1, 2))]

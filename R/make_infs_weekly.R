@@ -3,8 +3,8 @@
 
 make_infs_weekly = function(){
   
-  samples = readRDS('../samples_age_ab.rds')
-  estimates = read.csv('../estimates_age_ab.csv')
+  samples = readRDS('data/samples_age_ab.rds')
+  estimates = read.csv('data/estimates_age_ab.csv')
   
   samples = merge(samples, unique(estimates[, c('variable', 'population')]), by=c('variable'), all.x = T)
   
