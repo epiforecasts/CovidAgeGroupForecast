@@ -50,6 +50,7 @@ parameters {
   real<lower=0> w_sig;
   
   real<lower=0> sigma_inf;                    // uncertainty in model
+  real<lower=0> sigma_ab;                    // uncertainty in model
   
   matrix<lower=0>[A,A] sigma_cm;
   real<lower=0> sigma_mca[A];
@@ -65,6 +66,7 @@ transformed parameters{
   
   
   real<lower=0> combined_sigma[T,A];
+  real<lower=0> combined_sigma_ab[T,A];
   real<lower=0> combined_sigma_cm[contact_option == 1 ? W : 0, contact_option == 1 ? A : 0,  contact_option == 1 ? A : 0];
   real<lower=0> combined_sigma_mca[contact_option == 2 ? W : 0, contact_option == 2 ? A : 0];
   real<lower=0> combined_sigma_mc[contact_option == 3 ? W : 0];
@@ -108,6 +110,7 @@ transformed parameters{
     for (t in 1:T) {
       for (a in 1:A) {
         combined_sigma[t,a] = sqrt(sigma_inf^2 + inf_sd[t,a]^2);
+        combined_sigma_ab[t,a] = sqrt(sigma_ab^2 + ab_sd[t,a]^2);
       }
     }
   }
@@ -116,6 +119,7 @@ transformed parameters{
     for (t in 1:T) {
       for (a in 1:A) {
         combined_sigma[t,a] = sqrt((sigma_inf * inf_mu[t,a])^2 + inf_sd[t,a]^2);
+        combined_sigma_ab[t,a] = sqrt((sigma_ab * ab_mu[t,a])^2 + ab_sd[t,a]^2);
       }
     }
   }
@@ -145,7 +149,6 @@ transformed parameters{
 model {
   
   vector[A] full_susceptibility[T];                // container for antibody and inherent susceptibiluty combined 
-  vector[A] next_gens[T];                          // container for timeseries of infections generated for fit
   matrix[smax,A] next_gens_smax[T];                // container for timeseries of infections generated for fit as caused by infections originating at each date in the past
   row_vector[A] mean_conts[W];                     // mean contacts per age group
   real mat_mean[W];                                // mean contacts overall
@@ -162,6 +165,7 @@ model {
   w_sig ~ normal(1.7, 0.17)T[0,];
   
   sigma_inf ~ normal(0.005, 0.0025) T[0,];
+  sigma_ab ~ normal(0.005, 0.0025) T[0,];
   
   for (ai in 1:A) {
     for (aj in 1:A) {
@@ -238,8 +242,8 @@ model {
   // sample priors for infections and antibodies
   for (t in 1:T) {
     for (a in 1:A) {
-      infections[t,a] ~ normal(inf_mu[t,a], inf_sd[t,a])T[0,];
-      antibodies[t,a] ~ normal(anb_mu[t,a], anb_sd[t,a])T[0,1]; 
+      infections[t,a] ~ beta(2, 2);
+      antibodies[t,a] ~ beta(2, 2);
     }
   }
 
@@ -255,11 +259,12 @@ model {
       }
     
       // sum over all dates
-      next_gens[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gens_smax[t])) ;
+      infections[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gens_smax[t])) ;
     
       // sampling statement for calculated infections vs modelled infections
       for (a in 1:A) {
-        inf_mu[t,a] ~ normal(next_gens[t][a], combined_sigma[t, a]);
+        inf_mu[t,a] ~ normal(infections[t][a], combined_sigma[t, a]);
+        anb_mu[t,a] ~ normal(antibodies[t,a], combined_sigma_ab[t, a]);
       }
     }
   }
