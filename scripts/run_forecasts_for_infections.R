@@ -8,6 +8,7 @@ library(future)
 
 library(cmdstanr)
 library(cowplot)
+library(khroma)
 
 source('R/fit_model.R')
 source('R/make_infs_weekly.R')
