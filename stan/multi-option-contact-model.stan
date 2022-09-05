@@ -31,7 +31,7 @@ data {
 parameters {
   // incidence of infection and ab prevalence modelled as parameters drawn from 
      // independent normal distributions per time step.
-  real <lower=0> infections[T,A]; 
+  real <lower=0> init_infections[smax,A];
   real <lower=0, upper=1> antibodies[T,A];
   
   //parameters to fit
@@ -64,6 +64,9 @@ transformed parameters{
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
   
+  vector[A] full_susceptibility[T];                // container for antibody and inherent susceptibiluty combined
+  matrix[smax,A] next_gens_smax[T];                // container for timeseries of infections generated for fit as caused by infections originating at each date in the past
+  vector[A] infections[T];
   
   real<lower=0> combined_sigma[T,A];
   real<lower=0> combined_sigma_ab[T,A];
@@ -110,7 +113,7 @@ transformed parameters{
     for (t in 1:T) {
       for (a in 1:A) {
         combined_sigma[t,a] = sqrt(sigma_inf^2 + inf_sd[t,a]^2);
-        combined_sigma_ab[t,a] = sqrt(sigma_ab^2 + ab_sd[t,a]^2);
+        combined_sigma_ab[t,a] = sqrt(sigma_ab^2 + anb_sd[t,a]^2);
       }
     }
   }
@@ -119,7 +122,7 @@ transformed parameters{
     for (t in 1:T) {
       for (a in 1:A) {
         combined_sigma[t,a] = sqrt((sigma_inf * inf_mu[t,a])^2 + inf_sd[t,a]^2);
-        combined_sigma_ab[t,a] = sqrt((sigma_ab * ab_mu[t,a])^2 + ab_sd[t,a]^2);
+        combined_sigma_ab[t,a] = sqrt((sigma_ab * anb_mu[t,a])^2 + anb_sd[t,a]^2);
       }
     }
   }
@@ -144,12 +147,30 @@ transformed parameters{
     }
   }
 
+  // infection model
+
+  for (t in 1:T) {
+    // combine inherent and ab susceptibility
+    full_susceptibility[t] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection));
+
+    // construct matrix to correct contact matrix to NGM
+    if (t > smax) {
+      // calculate contribution for infections at t from dates between t-smax and t based on weights w_g
+      for (s in 1:smax) {
+        next_gens_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility[t]) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-s]));
+      }
+
+      // sum over all dates
+      infections[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gens_smax[t])) ;
+    } else {
+      infections[t] = to_vector(init_infections[t]);
+    }
+  }
+
 }
     
 model {
   
-  vector[A] full_susceptibility[T];                // container for antibody and inherent susceptibiluty combined 
-  matrix[smax,A] next_gens_smax[T];                // container for timeseries of infections generated for fit as caused by infections originating at each date in the past
   row_vector[A] mean_conts[W];                     // mean contacts per age group
   real mat_mean[W];                                // mean contacts overall
   
@@ -240,43 +261,29 @@ model {
   }
   
   // sample priors for infections and antibodies
-  for (t in 1:T) {
-    for (a in 1:A) {
-      infections[t,a] ~ beta(2, 2);
-      antibodies[t,a] ~ beta(2, 2);
+  for (a in 1:A) {
+    for (t in 1:smax) {
+      init_infections[t,a] ~ normal(inf_mu[t,a], inf_sd[t,a])T[0,];
+    }
+    for (t in 1:T) {
+      antibodies[t,a] ~ beta(1.2, 1.2);
     }
   }
 
-  for (t in 1:T) {
-    // combine inherent and ab susceptibility
-    full_susceptibility[t] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection ));
-    
-    // construct matrix to correct contact matrix to NGM
-    if (t>smax) {
-      // calculate contribution for infections at t from dates between t-smax and t based on weights w_g
-      for (s in 1:smax) {
-        next_gens_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility[t]) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-s]));
-      }
-    
-      // sum over all dates
-      infections[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gens_smax[t])) ;
-    
+  for (a in 1:A) {
+    for (t in (smax + 1):T) {
       // sampling statement for calculated infections vs modelled infections
-      for (a in 1:A) {
-        inf_mu[t,a] ~ normal(infections[t][a], combined_sigma[t, a]);
-        anb_mu[t,a] ~ normal(antibodies[t,a], combined_sigma_ab[t, a]);
-      }
+      inf_mu[t,a] ~ normal(infections[t][a], combined_sigma[t, a]);
+    }
+    for (t in 1:T) {
+      anb_mu[t,a] ~ normal(antibodies[t,a], combined_sigma_ab[t, a]);
     }
   }
-
 }
   
 generated quantities {
 
-  vector[A] full_susceptibility[T];                // container for ab and inherent susceptibiluty
-  vector[A] next_gens[T];
-  matrix[smax,A] next_gens_smax[T];
-  vector[A] forecast_gens[T + horizon]; 
+  vector[A] forecast_gens[T + horizon];
   matrix[smax,A] forecast_gens_smax[T + horizon]; 
 
   for (t in 1:T) {
@@ -285,22 +292,8 @@ generated quantities {
     }
   }
   
-  for (t in 1:T) {
-    // combine inherent and ab susceptibility
-    full_susceptibility[t] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection ));
-    
-    // construct matrix to correct contact matrix to NGM
-    if (t>smax) {
-      for (s in 1:smax) {
-        next_gens_smax[t][s] = to_row_vector(w_g[s] * (diag_matrix(full_susceptibility[t]) * contact_matrices_aug[day_to_week_converter[t]] * diag_matrix(to_vector(inf_rate)))  * to_vector(infections[t-s]));
-      }
-      next_gens[t] = to_vector(rep_row_vector(1,smax) *  to_matrix(next_gens_smax[t])) ;
-    }
-  }
-  
   // forecast cases
   for (f in 1:horizon) {
-    //full_susceptibility[T+f] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[T])*ab_protection ));
     for (s in 1:smax) {
       forecast_gens_smax[T+f][s] = to_row_vector(w_g[s] * diag_matrix(full_susceptibility[T]) * contact_matrices_aug[day_to_week_converter[T]] * diag_matrix(to_vector(inf_rate))  * to_vector(forecast_gens[T+f-s]));
     }
