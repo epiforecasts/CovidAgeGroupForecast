@@ -286,12 +286,12 @@ ggplot(summary_preds) +
 ggplot(summary_preds) +
   geom_line(data=summary_preds[ name=='forecast_gens' & date>forecast_date - 14], aes(x=time_index, y=value))+
   geom_point(data=summary_preds[ name=='forecast_gens' & date>forecast_date], aes(x=time_index, y=`50%`, color=run), alpha=0.8, size=0.5)+ 
-  geom_ribbon(data=summary_preds[name=='forecast_gens' & date>forecast_date - 14], aes(x=time_index, ymin=`5%`, ymax=`95%`, fill=run), alpha=0.2)+
+  geom_ribbon(data=summary_preds[name=='forecast_gens' & date>forecast_date - 14], aes(x=time_index, ymin=`5%`, ymax=`95%`), alpha=0.2)+
   geom_line(data = summary_preds[time_index>smax & name=='next_gens' & date>forecast_date - 14], 
             aes(x=time_index, y=`50%`, color=run), alpha=0.8)+
   
-  geom_ribbon(data = summary_preds[time_index>smax & name=='next_gens' & date>forecast_date - 14], 
-              aes(x=time_index, ymin=`5%`, ymax=`95%`, fill=run), alpha=0.3)+
+  #geom_ribbon(data = summary_preds[time_index>smax & name=='next_gens' & date>forecast_date - 14], 
+             # aes(x=time_index, ymin=`5%`, ymax=`95%`, fill=run), alpha=0.3)+
   facet_grid(forecast_date ~ age_group, scales = 'free')+
   theme(
     legend.position = 'bottom'

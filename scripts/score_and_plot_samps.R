@@ -2,6 +2,7 @@ library(data.table)
 library(ggplot2)
 library(patchwork)
 library(khroma)
+library(ggnewscale)
 source('R/score_forecasts_samples.R')
 source('R/plotting.R')
 
@@ -62,7 +63,7 @@ ggplot(overall_scores_inf) +
 write.csv(dcast(overall_scores_inf, formula = horizon ~ model, value.var = 'crps'), file = 'outputs/overall_infections_table.csv')
   
 
-age_scores_inf = summary_scores_inf$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'crps_rellv', 'ae_median_rel', 'bias')]
+age_scores_inf = summary_scores_inf$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'crps_rellv', 'ae_median_rel', 'ae_median_rellv', 'bias')]
 
 
 
@@ -77,7 +78,7 @@ age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.8)+
   geom_line(aes(x=horizon, y=crps_rel, color=model), linetype='dashed', alpha=0.8)+
   geom_hline(yintercept = 1)+
-  scale_y_continuous(trans='log2', name='crps')+
+  scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='')+
   scale_color_manual(labels=c('CoMix contact data', 
                               'No contact data', 
@@ -100,7 +101,7 @@ age_inf_lv = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
   geom_point(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
   geom_line(aes(x=horizon, y=crps_rellv, color=model), linetype='dashed', alpha=0.8)+
   geom_hline(yintercept = 1)+
-  scale_y_continuous(trans='log2', name='crps')+
+  scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='')+
   scale_color_manual(labels=c('CoMix contact data', 
                               'No contact data', 
@@ -128,7 +129,7 @@ period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv' & periods != 
   geom_line(aes(x=horizon, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_hline(yintercept = 1)+
-  scale_y_continuous(trans='log2', name='')+
+  scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='')+
   scale_color_manual(labels=c('CoMix contact data', 
                               'No contact data', 
@@ -200,7 +201,7 @@ age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.8)+
   geom_line(aes(x=horizon, y=crps_rel, color=model), linetype='dashed', alpha=0.8)+
   geom_hline(yintercept = 1)+
-  scale_y_continuous(trans='log2', name='crps')+
+  scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='Horizon')+
   scale_color_manual(labels=c('CoMix contact data', 
                               'No contact data', 
@@ -223,7 +224,7 @@ age_cas_lv = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   geom_point(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
   geom_line(aes(x=horizon, y=crps_rellv, color=model), linetype='dashed', alpha=0.8)+
   geom_hline(yintercept = 1)+
-  scale_y_continuous(trans='log2', name='crps')+
+  scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='Horizon')+
   scale_color_manual(labels=c('CoMix contact data', 
                               'No contact data', 
@@ -250,8 +251,8 @@ period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv' & periods != 
   geom_line(aes(x=horizon, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_hline(yintercept = 1)+
-  scale_y_continuous(trans='log2', name='')+
-  scale_x_discrete(labels=NULL, name='')+
+  scale_y_continuous(trans='log2', name='CRPS')+
+  scale_x_discrete(name='Horizon')+
   scale_color_manual(labels=c('CoMix contact data', 
                               'No contact data', 
                               'No interaction',
@@ -264,9 +265,9 @@ period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv' & periods != 
   ggtitle("B")+
   theme_minimal()+
   theme(
-    axis.text.x = element_text(angle=90), 
-    legend.position = 'bottom', 
-    strip.text.x = element_blank()
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    legend.position = 'bottom'
   )
 
 
@@ -356,7 +357,7 @@ overall_sp =
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)), guide='none')+
   scale_size(breaks = c(0,7,14,21,28))+
-  scale_y_continuous(trans='log2', name='crps')+
+  scale_y_continuous(trans='log2', name='CRPS')+
   theme_minimal()+
   ggtitle('A')+
   theme(
@@ -380,7 +381,7 @@ overall_sp_lv =
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)), guide='none')+
   scale_size(breaks = c(0,7,14,21,28))+
-  scale_y_continuous(trans='log2', name='crps')+
+  scale_y_continuous(trans='log2', name='CRPS')+
   theme_minimal()+
   ggtitle('A')+
   theme(
@@ -438,6 +439,9 @@ names(model_labs) = c(1,4,5,6)
 
 par_labs = c('Infectiousness', 'Susceptibility')
 names(par_labs) = c('inf_rate', 'susceptibility')
+
+lab_dates
+
 ggplot(inf_pars_wide) +
   geom_path(aes(x=ad_rat, y=el_rat, color=forecast_date), size=1)+
   scale_color_viridis(breaks = as.numeric(lab_dates), 
@@ -447,12 +451,14 @@ ggplot(inf_pars_wide) +
   geom_path(data=cas_pars_wide, aes(x=ad_rat, y=el_rat, color=forecast_date), size=1)+
   scale_color_viridis(breaks = as.numeric(lab_dates), 
                       labels = lab_dates, option="magma", name='Cases')+
-  scale_y_continuous(trans='log2', name='50+ relative to under 15s', limits=c(1/3.25, 3))+
-  scale_x_continuous(trans='log2', name='16-49s relative to under 15s', limits=c(1/3, 3))+
+  scale_y_continuous(trans='log2', name='Older adults relative to children', limits=c(1/3.25, 3))+
+  scale_x_continuous(trans='log2', name='Younger adults relative to children', limits=c(1/3, 3))+
   geom_vline(xintercept=1, alpha=0.2)+
   geom_hline(yintercept=1, alpha=0.2)+
   facet_grid(name~run, scale='free', labeller=labeller(run=model_labs, name=par_labs))+
   theme_minimal()
+
+ggsave('plots/paramplot_traj.png', width=10, height =6, units='in')
   
 ggplot(cas_pars_wide) +
   geom_path(aes(x=ad_rat, y=el_rat, color=forecast_date), size=1)+
