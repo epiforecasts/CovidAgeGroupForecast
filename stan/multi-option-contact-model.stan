@@ -97,9 +97,9 @@ transformed parameters{
   }
   
   for (s in 1:smax) {
-    w_g[s] = lognormal_cdf(s, w_mu, w_sig) - lognormal_cdf(s-1, w_mu, w_sig);
+    w_g[s] = lognormal_cdf(s+1, w_mu, w_sig) - lognormal_cdf(s, w_mu, w_sig);
   }
-  for (s in 1:smax) {
+  for (s in 1:(smax-1)) {
     w_g[s] = w_g[s]/sum(w_g);
   }
   
@@ -158,8 +158,8 @@ model {
   suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
-  w_mu ~ normal(5, 1)T[0,];
-  w_sig ~ normal(1.7, 0.17)T[0,];
+  w_mu ~ normal(5.0/7.0, 1.0/7.0)T[0,];
+  w_sig ~ normal(1.7/7.0, 0.17/7.0)T[0,];
   
   sigma_inf ~ normal(0.005, 0.0025) T[0,];
   
@@ -299,7 +299,7 @@ generated quantities {
     for (s in 1:smax) {
       forecast_gens_smax[T+f][s] = to_row_vector(w_g[s] * diag_matrix(full_susceptibility[T]) * contact_matrices_aug[day_to_week_converter[T]] * diag_matrix(to_vector(inf_rate))  * to_vector(forecast_gens[T+f-s]));
     }
-    forecast_gens[T+f] = to_vector(normal_rng(rep_row_vector(1,smax) *  to_matrix(forecast_gens_smax[T+f]), sigma_inf));
+    forecast_gens[T+f] = to_vector(normal_rng(rep_row_vector(1,smax) *  to_matrix(forecast_gens_smax[T+f]), combined_sigma[T]));
   }
 
 }
