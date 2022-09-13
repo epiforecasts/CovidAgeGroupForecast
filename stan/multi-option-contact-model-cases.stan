@@ -60,6 +60,8 @@ transformed parameters{
   real susceptibility[A];                    // vector of relative susceptibility by age  
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
+  real lnmu; 
+  real lnsig2;
   
   
   // initialise and set the size of the combined sigma parameters based on the ocontact options
@@ -94,13 +96,18 @@ transformed parameters{
       
     }
 
+
+
+  lnsig2 = log((w_sig^2)/(w_mu)^2  + 1);
+  lnmu = log(w_mu) - (lnsig2)/2;
   
-  for(s in 1:smax){
-    w_g[s] = lognormal_cdf(s, w_mu, w_sig) - lognormal_cdf(s-1, w_mu, w_sig);
+  for (s in 1:smax) {
+    w_g[s] = lognormal_cdf(s+1, lnmu, lnsig2) - lognormal_cdf(s, lnmu, lnsig2);
   }
-  for(s in 1:smax){
+  for (s in 1:(smax-1)) {
     w_g[s] = w_g[s]/sum(w_g);
   }
+
 
   for(w in 1:W){
     if(contact_option==1){
@@ -271,6 +278,7 @@ generated quantities{
   vector[A] full_susceptibility[T];                // container for ab and inherent susceptibiluty
   vector[A] next_gens[T];
   matrix[smax,A] next_gens_smax[T];
+  row_vector[A] forecast_gen_mu; 
   vector[A] forecast_gens[T + horizon]; 
   matrix[smax,A] forecast_gens_smax[T + horizon]; 
 
@@ -309,7 +317,9 @@ generated quantities{
       for(s in 1:smax){
         forecast_gens_smax[T+f][s] = to_row_vector(w_g[s] * diag_matrix(full_susceptibility[T]) * contact_matrices_aug[day_to_week_converter[T]] * diag_matrix(to_vector(inf_rate))  * to_vector(forecast_gens[T+f-s]));
       }
-     forecast_gens[T+f] = to_vector(normal_rng(rep_row_vector(1,smax) *  to_matrix(forecast_gens_smax[T+f]), sigma_inf));
+     forecast_gen_mu = rep_row_vector(1,smax) *  to_matrix(forecast_gens_smax[T+f]);
+     
+     forecast_gens[T+f] = to_vector(normal_rng(forecast_gen_mu, forecast_gen_mu * sigma_inf));
    
   }
 

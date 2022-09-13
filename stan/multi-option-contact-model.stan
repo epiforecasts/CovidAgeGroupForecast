@@ -62,6 +62,8 @@ transformed parameters{
   real susceptibility[A];                    // vector of relative susceptibility by age
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
+  real lnmu; 
+  real lnsig2;
   
   
   real<lower=0> combined_sigma[T,A];
@@ -96,8 +98,11 @@ transformed parameters{
     }
   }
   
+  lnsig2 = log((w_sig^2)/(w_mu)^2  + 1);
+  lnmu = log(w_mu) - (lnsig2)/2;
+  
   for (s in 1:smax) {
-    w_g[s] = lognormal_cdf(s+1, w_mu, w_sig) - lognormal_cdf(s, w_mu, w_sig);
+    w_g[s] = lognormal_cdf(s+1, lnmu, lnsig2) - lognormal_cdf(s, lnmu, lnsig2);
   }
   for (s in 1:(smax-1)) {
     w_g[s] = w_g[s]/sum(w_g);
