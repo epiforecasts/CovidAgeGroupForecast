@@ -98,16 +98,24 @@ transformed parameters{
     }
   }
   
-  lnsig2 = log((w_sig^2)/(w_mu)^2  + 1);
-  lnmu = log(w_mu) - (lnsig2)/2;
-  
-  for (s in 1:smax) {
-    w_g[s] = lognormal_cdf(s+1, lnmu, lnsig2) - lognormal_cdf(s, lnmu, lnsig2);
-  }
-  for (s in 1:(smax-1)) {
-    w_g[s] = w_g[s]/sum(w_g);
-  }
-  
+ lnsig2 = log(((w_sig^2)/(w_mu^2))  + 1);
+ lnmu = log(w_mu) - (lnsig2)/2;
+ 
+ for (s in 1:smax) {
+   w_g[s] = lognormal_cdf(s+1, lnmu, lnsig2) - lognormal_cdf(s, lnmu, lnsig2);
+ }
+ for (s in 1:(smax-1)) {
+   w_g[s] = w_g[s]/sum(w_g);
+ }
+ 
+ 
+ //for (s in 1:smax) {
+ //  w_g[s] = lognormal_cdf(s+1, w_mu, w_sig) - lognormal_cdf(s, w_mu, w_sig);
+ //}
+ //for (s in 1:(smax-1)) {
+ //  w_g[s] = w_g[s]/sum(w_g);
+ //}
+ 
   
   if (sigma_option == 1) {
     for (t in 1:T) {
@@ -163,8 +171,8 @@ model {
   suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
-  w_mu ~ normal(5.0/7.0, 1.0/7.0)T[0,];
-  w_sig ~ normal(1.7/7.0, 0.17/7.0)T[0,];
+  w_mu ~ normal(5.0/7.0, 1.0)T[0,];
+  w_sig ~ normal(5.0/7.0, 1.0)T[0,];
   
   sigma_inf ~ normal(0.005, 0.0025) T[0,];
   
