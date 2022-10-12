@@ -102,6 +102,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
   init_fun <- function(...) list(w_mu=5.0, w_sigma=1.5)
   # fit the model  
   fit = age_model$sample(data, 
+                       init = list(list(w_mu = 5.0/7.0)),
                        iter_warmup = 250,
                        iter_sampling=250, 
                        chains=1, 

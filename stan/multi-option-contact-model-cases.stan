@@ -149,8 +149,8 @@ model {
   suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
-  w_mu ~ normal(5, 1)T[0,];
-  w_sig ~ normal(1.7, 0.17)T[0,];
+  w_mu ~ normal(5.0/7.0, 1.0/7.0)T[0,];
+  w_sig ~ normal(2.0/7.0, 0.17/7.0)T[0,];
   
   sigma_inf ~ normal(0.05, 0.01) T[0,];
   
