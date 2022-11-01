@@ -46,8 +46,10 @@ parameters {
   //real<lower=0,upper=1> susceptibility[A];  // age specific susceptibility 
   real<lower=0,upper=1> ab_protection;        // protection offered by antibodies
 
-  real<lower=0> w_mu; 
-  real<lower=0> w_sig;
+  //real<lower=0> w_mu; 
+  //real<lower=0> w_sig;
+  real lnmu; 
+  real lnsig2;
   
   real<lower=0> sigma_inf;                    // uncertainty in model
   
@@ -62,8 +64,7 @@ transformed parameters{
   real susceptibility[A];                    // vector of relative susceptibility by age
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
-  real lnmu; 
-  real lnsig2;
+
   
   
   real<lower=0> combined_sigma[T,A];
@@ -98,13 +99,12 @@ transformed parameters{
     }
   }
   
- lnsig2 = log(((w_sig^2)/(w_mu^2))  + 1);
- lnmu = log(w_mu) - (lnsig2)/2;
+
  
  for (s in 1:smax) {
-   w_g[s] = lognormal_cdf(s+1, lnmu, lnsig2) - lognormal_cdf(s, lnmu, lnsig2);
+   w_g[s] = lognormal_cdf(s, lnmu, lnsig2) - lognormal_cdf(s-1, lnmu, lnsig2);
  }
- for (s in 1:(smax-1)) {
+ for (s in 1:smax) {
    w_g[s] = w_g[s]/sum(w_g);
  }
  
@@ -161,24 +161,30 @@ model {
   vector[A] next_gens[T];                          // container for timeseries of infections generated for fit
   matrix[smax,A] next_gens_smax[T];                // container for timeseries of infections generated for fit as caused by infections originating at each date in the past
   row_vector[A] mean_conts[W];                     // mean contacts per age group
-  real mat_mean[W];                                // mean contacts overall
+  real mat_mean[W];  // mean contacts overall
   
+  
+  real w_sig = 5.0/7.0; 
+  real w_mu = 5.0/7.0;
+  
+  real w_prior_sig = log(((w_sig^2)/(w_mu^2))  + 1);
+  real w_prior_mu  = log(w_mu) - (w_prior_sig)/2;
   row_vector[A] ones = rep_row_vector(1,A);        // a row vector of ones 'A' long 
   
   ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
-  inf_rate_hyper_mu ~ normal(0.25, 0.05)T[0,1];    // priors for inf and susc hyper parameters 
-  inf_rate_hyper_sd ~ normal(0.05,0.01)T[0,];
-  suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
-  suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
+  inf_rate_hyper_mu ~ beta(4,12);    // priors for inf and susc hyper parameters 
+  inf_rate_hyper_sd ~ normal(0.1,0.02)T[0,];
+  suscept_hyper_mu ~ beta(24, 24);
+  suscept_hyper_sd ~ normal(0.05, 0.01)T[0,];
   
-  w_mu ~ normal(5.0/7.0, 1.0)T[0,];
-  w_sig ~ normal(5.0/7.0, 1.0)T[0,];
+  lnmu ~ normal(w_prior_mu, w_mu/5.0);
+  lnsig2 ~ normal(w_prior_sig, w_prior_sig/5.0);
   
-  sigma_inf ~ normal(0.005, 0.0025) T[0,];
+  sigma_inf ~ normal(0.05, 0.025) T[0,];
   
   for (ai in 1:A) {
     for (aj in 1:A) {
-      sigma_cm[ai,aj] ~ normal(0.005, 0.0025) T[0,];
+      sigma_cm[ai,aj] ~ normal(0.05, 0.025) T[0,];
     }
   }
   
@@ -257,8 +263,8 @@ model {
   }
 
   for (t in 1:T) {
-    // combine inherent and ab susceptibility
-    full_susceptibility[t] = to_vector(susceptibility) .* (1.0 - (to_vector(antibodies[t])*ab_protection ));
+    // combine inherent and ab susceptibility - ab leaky coverage
+    full_susceptibility[t] = to_vector(susceptibility) .* (1.0 + (ab_protection - 1.0) * (to_vector(antibodies[t])));
     
     // construct matrix to correct contact matrix to NGM
     if (t>smax) {

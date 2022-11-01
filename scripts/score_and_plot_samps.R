@@ -313,8 +313,8 @@ ggsave('plots/periods_bias.png',width = 7, height=5, units='in')
 
 overall_scores = rbind(overall_scores_inf[, type:='Infections'], overall_scores_cas[, type:='Cases'])
 
-overall_scores = merge(overall_scores, overall_scores[model=='baseline_expex_lv'], by = c('type', 'horizon'), suffixes = c('','_baseline'))
-overall_scores = merge(overall_scores, overall_scores[model=='baseline_last_val'], by = c('type', 'horizon'), suffixes = c('','_baselinelv'))
+overall_scores = merge(overall_scores, overall_scores[model=='5'], by = c('type', 'horizon'), suffixes = c('','_baseline'))
+overall_scores = merge(overall_scores, overall_scores[model=='5'], by = c('type', 'horizon'), suffixes = c('','_baselinelv'))
 
 overall_scores[, crps_rel := crps / crps_baseline]
 overall_scores[, crps_rellv := crps / crps_baselinelv]
@@ -327,7 +327,7 @@ write.csv(overall_scores[, c('type' ,'horizon'  ,           'model' ,     'crps'
 age_scores = rbind(age_scores_inf[, -c('age_index')][, type:='Infections'], age_scores_cas[, type:='Cases'])
 
 
-age_scores[, c('type' ,'horizon'  ,           'model' ,  'age_group',  'crps', 'ae_median',         'bias',  'crps_rel' )]
+#age_scores[, c('type' ,'horizon'  ,           'model' ,  'age_group',  'crps', 'ae_median',         'bias',  'crps_rel' )]
 
 write.csv(age_scores[, c('type' ,'horizon'  ,           'model' , 'age_group',    'crps_rel'   ,      'bias')]
           , 'outputs/age_scores_rel.csv')
@@ -335,7 +335,7 @@ write.csv(age_scores[, c('type' ,'horizon'  ,           'model' , 'age_group',  
 period_scores = rbind(period_scores_inf[, type:='Infections'], period_scores_cas[, type:='Cases'])
 
 
-period_scores[, c('type' ,'horizon'  ,           'model' ,  'age_group',  'crps', 'ae_median',         'bias',  'crps_rel' )]
+#period_scores[, c('type' ,'horizon'  ,           'model' ,  'age_group',  'crps', 'ae_median',         'bias',  'crps_rel' )]
 
 write.csv(period_scores[, c('type' ,'horizon'  ,           'model' , 'periods',   'crps_rel'   ,      'bias')]
           , 'outputs/period_scores_rel.csv')
@@ -388,24 +388,25 @@ overall_sp_lv =
     axis.text.x = element_text(angle=90), 
     legend.position = 'bottom'
   )
-
-overageres = overall_sp / age_inf / age_cas + plot_layout(heights = c(2,1,1))
-overageres_lv = overall_sp_lv / age_inf_lv / age_cas_lv + plot_layout(heights = c(2,1,1))
+layout_overall = 
+"
+AABB
+AACC"
+overageres = overall_sp + age_inf + age_cas + plot_layout(design = layout_overall)
+overageres_lv = overall_sp_lv / age_inf_lv + age_cas_lv + plot_layout(design = layout_overall)
 
 
 age_inf / age_cas
 
-ggsave('plots/overall_results.pdf', plot = overageres, width = 7, height=7, units = 'in')
-ggsave('plots/overall_results.png', plot = overageres, width = 7, height=7, units = 'in', dpi=300)
+ggsave('plots/overall_results.pdf', plot = overageres, width = 12, height=7, units = 'in')
+ggsave('plots/overall_results.png', plot = overageres, width = 12, height=7, units = 'in', dpi=300)
 
-ggsave('plots/overall_results_lv.pdf', plot = overageres_lv, width = 7, height=7, units = 'in')
-ggsave('plots/overall_results_lv.png', plot = overageres_lv, width = 7, height=7, units = 'in', dpi=300)
+ggsave('plots/overall_results_lv.pdf', plot = overageres_lv, width = 12, height=7, units = 'in')
+ggsave('plots/overall_results_lv.png', plot = overageres_lv, width = 12, height=7, units = 'in', dpi=300)
 
 
 
-((preds_plot_inf + ggtitle('A'))     /  (scores_plot_inf + ggtitle('C')) + plot_layout(heights=c(4,1))) + 
-((preds_plot_cas + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6)) + ggtitle('B'))     /  (scores_plot_cas + ggtitle('D')) + plot_layout(heights=c(4,1))) #/ 
-#guide_area()  + plot_layout(guides = 'collect', heights=c(3,3,1))
+
 
 
 (((preds_plot_inf + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6),  labels=scales::comma) + ggtitle('A')) + (preds_plot_cas + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6),  labels=scales::comma) + ggtitle('B')))     /  
@@ -460,13 +461,4 @@ ggplot(inf_pars_wide) +
 
 ggsave('plots/paramplot_traj.png', width=10, height =6, units='in')
   
-ggplot(cas_pars_wide) +
-  geom_path(aes(x=ad_rat, y=el_rat, color=forecast_date), size=1)+
-  scale_color_viridis(name='',breaks = as.numeric(lab_dates), 
-                      labels = lab_dates)+
-  scale_y_continuous(trans='log2', name='50+ relative to under 15s', limits=c(1/3.25, 3))+
-  scale_x_continuous(trans='log2', name='16-49s relative to under 15s', limits=c(1/3, 3))+
-  geom_vline(xintercept=1, alpha=0.2)+
-  geom_hline(yintercept=1, alpha=0.2)+
-  facet_grid(name~run, scale='free', labeller=labeller(run=model_labs, name=par_labs))+
-  theme_minimal()
+

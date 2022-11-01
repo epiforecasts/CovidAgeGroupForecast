@@ -44,8 +44,10 @@ parameters {
   real inf_prime[A];
   real sus_prime[A];
 
-  real<lower=0> w_mu; 
-  real<lower=0> w_sig;
+  //real<lower=0> w_mu; 
+  //real<lower=0> w_sig;
+  real lnmu; 
+  real lnsig2;
   
   real<lower=0> sigma_inf;                    // uncertainty in model
   
@@ -60,8 +62,7 @@ transformed parameters{
   real susceptibility[A];                    // vector of relative susceptibility by age  
   matrix[A,A] contact_matrices_aug[W];       // population corrected contact matrix parameter
   real w_g[smax];
-  real lnmu; 
-  real lnsig2;
+
   
   
   // initialise and set the size of the combined sigma parameters based on the ocontact options
@@ -98,13 +99,12 @@ transformed parameters{
 
 
 
-  lnsig2 = log((w_sig^2)/(w_mu)^2  + 1);
-  lnmu = log(w_mu) - (lnsig2)/2;
+
   
   for (s in 1:smax) {
-    w_g[s] = lognormal_cdf(s+1, lnmu, lnsig2) - lognormal_cdf(s, lnmu, lnsig2);
+    w_g[s] = lognormal_cdf(s, lnmu, lnsig2) - lognormal_cdf(s-1, lnmu, lnsig2);
   }
-  for (s in 1:(smax-1)) {
+  for (s in 1:(smax)) {
     w_g[s] = w_g[s]/sum(w_g);
   }
 
@@ -143,16 +143,21 @@ model {
   
   row_vector[A] ones = rep_row_vector(1,A);        // a row vector of ones 'A' long 
   
+  real w_sig = 5.0/7.0; 
+  real w_mu = 5.0/7.0;
+  
+  real w_prior_sig = log(((w_sig^2)/(w_mu^2))  + 1);
+  real w_prior_mu  = log(w_mu) - (w_prior_sig)/2;
   //ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
   inf_rate_hyper_mu ~ normal(0.25, 0.05)T[0,1];    // priors for inf and susc hyper parameters 
   inf_rate_hyper_sd ~ normal(0.05,0.01)T[0,];
   suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
   suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
-  w_mu ~ normal(5.0/7.0, 1.0/7.0)T[0,];
-  w_sig ~ normal(2.0/7.0, 0.17/7.0)T[0,];
+  lnmu ~ normal(w_prior_mu, w_mu/5.0);
+  lnsig2 ~ normal(w_prior_sig, w_prior_sig/5.0);
   
-  sigma_inf ~ normal(0.05, 0.01) T[0,];
+  sigma_inf ~ normal(0.05, 0.025) T[0,];
   
   for(ai in 1:A){
    for(aj in 1:A){
