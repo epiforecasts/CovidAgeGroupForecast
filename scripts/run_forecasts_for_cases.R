@@ -25,6 +25,8 @@ breaks = c(c(0),seq(9,69, 10), c(Inf))
 
 age_groups = c('0-9',  '10-19',   '20-29',  '30-39',  '40-49',  '50-59',  '60-69', '70+')
 
+light = colour('light')
+
 cas_traj = ggplot(case_data_age_groups[date>lubridate::ymd(20200730)]) + 
   #geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
   geom_point(aes(x=date, y=rolling_cases, color=age_group), size=1, stroke=0)+
