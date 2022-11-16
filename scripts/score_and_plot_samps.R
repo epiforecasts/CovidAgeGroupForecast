@@ -45,6 +45,8 @@ summary_scores_inf = outs_inf[[1]]
 
 preds_plot_inf = outs_inf[[2]]
 scores_plot_inf = outs_inf[[3]]
+cov_plot_inf = outs_inf[[4]]
+range_plot_inf = outs_inf[[5]]
 
 
 overall_scores_inf = summary_scores_inf$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
@@ -76,7 +78,7 @@ vibrant = colour('vibrant')
 age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
   #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.8)+
-  geom_line(aes(x=horizon, y=crps_rel, color=model), linetype='dashed', alpha=0.8)+
+  geom_bump(aes(x=horizon, y=crps_rel, color=model), alpha=0.8)+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='')+
@@ -99,7 +101,7 @@ age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
 age_inf_lv = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
   #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
   geom_point(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
-  geom_line(aes(x=horizon, y=crps_rellv, color=model), linetype='dashed', alpha=0.8)+
+  geom_bump(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='')+
@@ -126,7 +128,7 @@ period_scores_inf = summary_scores_inf$score_by_period[,c('model', 'periods', 'h
 
 
 period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv' & periods != 'Schools \nre-opened',]) +
-  geom_line(aes(x=horizon, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
+  geom_bump(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='CRPS')+
@@ -186,6 +188,8 @@ summary_scores_cas = outs_cas[[1]]
 
 preds_plot_cas = outs_cas[[2]]
 scores_plot_cas = outs_cas[[3]]
+cov_plot_cas = outs_cas[[4]]
+range_plot_cas = outs_cas[[5]]
 
 overall_scores_cas = summary_scores_cas$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
 
@@ -199,7 +203,7 @@ age_scores_cas = summary_scores_cas$score_by_age[,c('model', 'age_group', 'horiz
 age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.8)+
-  geom_line(aes(x=horizon, y=crps_rel, color=model), linetype='dashed', alpha=0.8)+
+  geom_bump(aes(x=horizon, y=crps_rel, color=model), alpha=0.8)+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='Horizon')+
@@ -222,7 +226,7 @@ age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
 age_cas_lv = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
   geom_point(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
-  geom_line(aes(x=horizon, y=crps_rellv, color=model), linetype='dashed', alpha=0.8)+
+  geom_bump(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='CRPS')+
   scale_x_discrete(labels=NULL, name='Horizon')+
@@ -248,7 +252,7 @@ period_scores_cas = summary_scores_cas$score_by_period[,c('model', 'periods', 'h
 
 
 period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv' & periods != 'Schools \nre-opened',]) +
-  geom_line(aes(x=horizon, y=crps_rel, color=model), alpha=0.6, linetype='dashed')+
+  geom_bump(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='CRPS')+
@@ -319,7 +323,10 @@ overall_scores = merge(overall_scores, overall_scores[model=='5'], by = c('type'
 overall_scores[, crps_rel := crps / crps_baseline]
 overall_scores[, crps_rellv := crps / crps_baselinelv]
 
-overall_scores[, c('type' ,'horizon'  ,           'model' ,     'crps', 'ae_median',         'bias',  'crps_rel' )]
+overall_scores[, ae_median_rel := ae_median / ae_median_baseline]
+
+
+overall_scores[, c('type' ,'horizon'  ,           'model' ,     'crps', 'ae_median',        'bias',  'crps_rel',  'ae_median_rel')]
 
 write.csv(overall_scores[, c('type' ,'horizon'  ,           'model' ,     'crps', 'ae_median',         'bias',  'crps_rel' )]
 , 'outputs/overall_scores_rel.csv')
@@ -344,10 +351,11 @@ write.csv(period_scores[, c('type' ,'horizon'  ,           'model' , 'periods', 
 overall_sp = 
   ggplot(overall_scores) + 
   #geom_curve(aes(x=model, xend=model, y=1, yend=crps_rel+horizon*0.00001, size=exp(horizon/7)), alpha=0.3, curvature = 0.15)+
-  geom_path(aes(x=bias, y=crps_rel, color=model), alpha=0.7)+
-  geom_point(aes(x=bias, y=crps_rel, color=model, size=horizon), alpha=0.7)+
+  geom_path(aes(x=ae_median_rel, y=crps_rel, color=model), alpha=0.7)+
+  geom_point(aes(x=ae_median_rel, y=crps_rel, color=model, size=horizon), alpha=0.7)+
+  geom_abline(intercept=-1, slope=1, linetype=2)+
   geom_hline(yintercept = 1, alpha=0.5)+
-  geom_vline(xintercept = 0, alpha=0.5)+
+  geom_vline(xintercept = 1, alpha=0.5)+
   facet_wrap(~type)+
   scale_color_manual(labels=c('CoMix contact data', 
                               'No contact data', 
@@ -415,6 +423,38 @@ guide_area()  + plot_layout(guides = 'collect', heights=c(10,2,1))
 
 
 ggsave('plots/preds_scores_both.png', width=15, height=20, units='in')
+
+layout_covs = 
+  "
+AABB
+CCDD
+CCDD
+CCDD
+EEEE"
+
+layout_covs = 
+  "
+AAAAACCCCDDDD
+AAAAACCCCDDDD
+AAAAACCCCDDDD
+BBBBBCCCCDDDD
+BBBBBCCCCDDDD
+BBBBBCCCCDDDD
+EEEEEEEEEEEEE"
+
+cov_plot_inf = cov_plot_inf + plot_annotation(title='C')
+cov_plot_cas = cov_plot_cas + plot_annotation(title='D')
+
+(range_plot_inf  + xlab('Horizon (Weeks)') + ylab("Prop. of infection incidence \nin central range of projections") + theme(legend.position = 'none')) + 
+  (range_plot_cas  + xlab('Horizon (Weeks)') + ylab("Prop. of case incidence \nin central range of projections") + theme(legend.position = 'none')) +  
+  ((cov_plot_inf) & theme(legend.position = 'none')) + (cov_plot_cas & theme(legend.position = 'none'))  + 
+  guide_area()  + plot_layout(guides = 'collect', design = layout_covs) + 
+  plot_annotation(tag_levels = 'A') & theme(legend.position = 'bottom')
+
+
+
+ggsave('plots/coverage_plot.png', width=11, height=8, units='in')
+
 
 
 inf_pars = readRDS('outputs/summary_pars_infweek.rds')

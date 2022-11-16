@@ -148,11 +148,16 @@ model {
   
   real w_prior_sig = log(((w_sig^2)/(w_mu^2))  + 1);
   real w_prior_mu  = log(w_mu) - (w_prior_sig)/2;
-  //ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
+//  ab_protection ~ beta(5.0, 1.0);                  // protectiveness of antibodies
   inf_rate_hyper_mu ~ beta(4,12);    // priors for inf and susc hyper parameters 
-  inf_rate_hyper_sd ~ normal(0.1,0.02)T[0,];
+//  inf_rate_hyper_sd ~ normal(0.1,0.02)T[0,];
   suscept_hyper_mu ~ beta(24, 24);
-  suscept_hyper_sd ~ normal(0.05, 0.01)T[0,];
+//  suscept_hyper_sd ~ normal(0.05, 0.01)T[0,];
+  
+  //inf_rate_hyper_mu ~ normal(0.25, 0.05)T[0,1];    // priors for inf and susc hyper parameters 
+  inf_rate_hyper_sd ~ normal(0.1,0.02)T[0,];
+//  suscept_hyper_mu ~ normal(0.5, 0.1)T[0,1];
+  suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
   lnmu ~ normal(w_prior_mu, w_mu/5.0);
   lnsig2 ~ normal(w_prior_sig, w_prior_sig/5.0);
@@ -161,7 +166,7 @@ model {
   
   for(ai in 1:A){
    for(aj in 1:A){
-    sigma_cm ~ normal(0.05, 0.01) T[0,]; 
+    sigma_cm ~ normal(0.05, 0.025) T[0,]; 
    }
   }
   

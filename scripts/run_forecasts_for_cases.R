@@ -87,6 +87,14 @@ for(r in c(1,4,5)){
 }
 
 cms_pmd = get_polymod_cms(breaks)
+cms_pmd = data.table(cms_pmd)
+age_lookup = 1:8; names(age_lookup) = levels(cms_pmd$Var1)
+
+
+cms_pmd[, level1:=age_lookup[Var1]]
+cms_pmd[, level2:=age_lookup[Var2]]
+
+cms_pmd = cms_pmd[order(sr, cms_pmd$level1, cms_pmd$level2),]
 
 est <- future_lapply(
   dates, fit_NGM_model_for_date_range_cases,
@@ -126,6 +134,11 @@ for(i in 1:length(all_est)){
   summary_diags = rbind(summary_diags, data.table(all_est[[i]]$diagnostics))
 }
 
+
+summary_diags[run==1,]
+summary_diags[run==4,]
+summary_diags[run==5,]
+summary_diags[run==6,]
 
 summary_preds = data.table()
 for(i in 1:length(all_est)){

@@ -46,16 +46,17 @@ inf_estimates[, sd_no := sd]
 inf_estimates[, age_group_no := age_lookup[variable]]
 
 # plot of infection time series
+light = colour('light')
 
 inf_traj = ggplot(inf_estimates) + 
-  geom_ribbon(aes(x=date, ymin=q10, ymax=q90))+
-  geom_point(aes(x=date, y=mean_no), size=0.3, stroke=0, color='red')+
+  geom_pointrange(aes(x=date, y=mean, ymax=q90, ymin=q10, color=as.character(age_group_no)), size=0.3, stroke=0)+
   facet_wrap(~age_group_no, nrow=1, labeller= labeller(age_group_no = age_labs))+
-  scale_y_continuous(name='Infections')+
-  scale_x_date(breaks = c(), name='')+
+  scale_y_continuous(name='Antibody prevalence')+
+  scale_x_date(date_labels = '%b-%y', name='Date')+
+  scale_color_manual(name='Age group', values = as.vector(light(9)), labels =age_labs)+
   theme_minimal_hgrid()+
-  ggtitle('A')+
-  geom_vline(xintercept = lubridate::ymd('2021-11-09'))
+  theme(axis.text.x = element_text(angle = 45, size=10))+
+  ggtitle('B')
 
 
 
@@ -181,8 +182,18 @@ for(r in c(1,4,5)){
   
 }
 
+
+
 cms_pmd = get_polymod_cms(breaks)
 
+age_lookup = 1:7; names(age_lookup) = levels(cms_pmd$Var1)
+
+cms_pmd = data.table(cms_pmd)
+
+cms_pmd[, level1:=age_lookup[Var1]]
+cms_pmd[, level2:=age_lookup[Var2]]
+
+cms_pmd = cms_pmd[order(sr, cms_pmd$level1, cms_pmd$level2),]
 
 est <- future_lapply(
   dates, fit_NGM_model_for_date_range,
@@ -199,7 +210,8 @@ est <- future_lapply(
   contact_option=1,
   sigma_option=2,
   forecast_horizon = 4,
-  future.seed=TRUE
+  future.seed=TRUE, 
+  ad=0.9
 )
 
 all_est = append(all_est, est)
@@ -219,6 +231,10 @@ for(i in 1:length(all_est)){
   summary_diags = rbind(summary_diags, data.table(all_est[[i]]$diagnostics))
 }
 
+summary_diags[run==1,]
+summary_diags[run==4,]
+summary_diags[run==5,]
+summary_diags[run==6,]
 
 summary_preds = data.table()
 for(i in 1:length(all_est)){

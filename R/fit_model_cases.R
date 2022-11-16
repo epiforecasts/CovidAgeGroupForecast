@@ -108,7 +108,7 @@ fit_NGM_model_for_date_range_cases = function(end_date='20211001',
   w_prior_sig = log(((w_sig^2)/(w_mu^2))  + 1);
   w_prior_mu  = log(w_mu) - (w_prior_sig)/2;
   fit = age_model$sample(data, 
-                         init = list(list(lnmu = w_prior_mu, lnsig2 = w_prior_sig)),
+                         init = list(list(lnmu = w_prior_mu, lnsig2 = w_prior_sig, inf_rate_hyper_mu=0.5, suscept_hyper_mu = 0.28)),
                        iter_warmup = 250,
                        iter_sampling=250, 
                        chains=1, 

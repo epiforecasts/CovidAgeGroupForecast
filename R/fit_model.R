@@ -18,7 +18,8 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
                                         runindex=1, 
                                         contact_option=1, 
                                         sigma_option=1, 
-                                        forecast_horizon
+                                        forecast_horizon,
+                                        ad=0.8
 ){
   
   # set the end and start dates as date objects
@@ -113,7 +114,7 @@ fit_NGM_model_for_date_range = function(end_date='20211001',
                        iter_sampling=250, 
                        chains=1, 
                        max_treedepth = 12, 
-                       adapt_delta=0.8, 
+                       adapt_delta=ad, 
                        seed = sample.int(.Machine$integer.max, 1))
   
   out <- data.table(

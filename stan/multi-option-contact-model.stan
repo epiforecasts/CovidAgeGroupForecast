@@ -175,7 +175,7 @@ model {
   inf_rate_hyper_mu ~ beta(4,12);    // priors for inf and susc hyper parameters 
   inf_rate_hyper_sd ~ normal(0.1,0.02)T[0,];
   suscept_hyper_mu ~ beta(24, 24);
-  suscept_hyper_sd ~ normal(0.05, 0.01)T[0,];
+  suscept_hyper_sd ~ normal(0.1, 0.02)T[0,];
   
   lnmu ~ normal(w_prior_mu, w_mu/5.0);
   lnsig2 ~ normal(w_prior_sig, w_prior_sig/5.0);
