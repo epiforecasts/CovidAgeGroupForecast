@@ -90,7 +90,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   vibrant = colour('vibrant')
   
   
-
+ # plot raw predictions from the forecasts - for supplements - PLOT EVERYTHING
   plot_predictions = function(additional_models = c(), horizons = 7 * 1:4){
     
     preds_ranges= preds_ranges[horizon %in% horizons,]
@@ -127,6 +127,8 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     return(pred_plot)
     
   }
+  
+  # plot raw predictions from the forecasts - for main text
   
   plot_predictions_port = function(additional_models = c(), additional_drop = c(), horizons = 7 * 1:4, period_include=pandemic_periods$periods, plot_labs = c()){
     if(length(plot_labs) == 0 ){
@@ -183,21 +185,16 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
     
   }
   
-  full_model_alone_plot_2 = plot_predictions_port(horizons = c(7, 28))
+  # plots of all models for main text
+  
+  
   full_model_alone_plot_2 = plot_predictions_port(additional_models = c(4,5,6), 
                                                   additional_drop = c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv"), 
                                                   horizons = c(7, 28), 
                                                   plot_labs = labels[c(1,2,3,4)])
   
- # christmas_plot = plot_predictions_port(additional_models = c(6), 
- #                                   period_include=c('Christmas + \nLockdown 3', 'Lockdown 3 \neasing')) + 
- #                       scale_x_date(date_breaks = "1 month", 
- #                                                    labels = function(x) if_else(is.na(lag(x)) | !year(lag(x)) == year(x), 
- #                                                                                 paste(month(x, label = TRUE), "\n", year(x)), 
- #                                                                                 paste(month(x, label = TRUE))))
-#
-  
-  #ggsave(paste0('plots/christmasplot', suffix ,'.png'), width = 15, height=7, units='in')
+ 
+  # plot raw predictions from the forecasts for each model against baselines 
   
   full_model_alone_plot = plot_predictions()
   ggsave(paste0('plots/prediction_plot', suffix, '.png'), width = 15, height = 7, units = 'in')
@@ -211,8 +208,15 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   full_model_alone_plot_no_intr = plot_predictions(c(6))
   ggsave(paste0('plots/prediction_plot', suffix, '_polymod.png'), width = 15, height = 7, units = 'in')
 
+  # SCORE FORECASTS USING SCORINGUTILS
+  
   scores = score(preds_to_score)
   
+  ##################################
+  
+  
+  
+  # Convert samples to quntiles for coverage calculations
   quants_to_score = sample_to_quantile(preds_to_score, quantiles = seq(0.05, 0.95, 0.05), type = 7)
   
   scores_quant <- score(quants_to_score)
@@ -222,17 +226,17 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)))
     
-  
-  covplt1 =   coverage_plot = plot_quantile_coverage(scores_quant[horizon == 7  & !(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")), ]) + ggtitle('1 week' )  + scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)), guide='none') + theme_minimal_grid()
-  covplt2 =   coverage_plot = plot_quantile_coverage(scores_quant[horizon == 14 & !(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")), ]) + ggtitle('2 weeks')  + scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)), guide='none') + theme_minimal_grid() 
-  covplt3 =   coverage_plot = plot_quantile_coverage(scores_quant[horizon == 21 & !(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")), ]) + ggtitle('3 weeks')  + scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)), guide='none') + theme_minimal_grid()
-  covplt4 =   coverage_plot = plot_quantile_coverage(scores_quant[horizon == 28 & !(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")), ]) + ggtitle('4 weeks')  + scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)), guide='none') + theme_minimal_grid()
+  # Coverage plots 
+  covplt1 = plot_quantile_coverage(scores_quant[horizon == 7  & !(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")), ]) + ggtitle('1 week' )  + scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)), guide='none') + theme_minimal_grid()
+  covplt2 = plot_quantile_coverage(scores_quant[horizon == 14 & !(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")), ]) + ggtitle('2 weeks')  + scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)), guide='none') + theme_minimal_grid() 
+  covplt3 = plot_quantile_coverage(scores_quant[horizon == 21 & !(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")), ]) + ggtitle('3 weeks')  + scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)), guide='none') + theme_minimal_grid()
+  covplt4 = plot_quantile_coverage(scores_quant[horizon == 28 & !(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")), ]) + ggtitle('4 weeks')  + scale_color_manual(name='Model', labels=labels , values=as.vector(vibrant(6)), guide='none') + theme_minimal_grid()
   
   coverage_plot = (covplt1 + covplt2)/(covplt3 + covplt4) +  plot_layout(guides = 'collect') & theme(legend.position = 'bottom')
   
   coverage_plot_14 = (covplt1 / covplt4) & theme(legend.position = 'none')
   
-  
+  # Calculate the proportion of true values in forecast ranges
   wide_quantrange = dcast(quants_to_score, formula = age_group + forecast_date + horizon + periods + true_value + model ~ quantile, value.var = c('prediction'))
 
   prop_in_range = data.table()
@@ -259,7 +263,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   prop_in_range = rbind(prop_in_range, unique(wide_quantrange[,c('age_group','horizon','model','prop_in_range', 'range', 'range_num', 'periods')]))
   
-  
+  # plot range plots - All periods seperately for SM
   range_plot = 
     ggplot(prop_in_range[!(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")) & !is.na(periods)]) + 
     geom_hline(aes(yintercept=range_num/100), color='gray', size=3)+
@@ -293,7 +297,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   prop_in_range_all = rbind(prop_in_range_all, unique(wide_quantrange[,c('age_group','horizon','model','prop_in_range', 'range', 'range_num', 'periods')]))
   
-  
+  # plot range plots - overall - main text
   range_plot_all = 
     ggplot(prop_in_range_all[!(model %in% c("baseline_last_val", "baseline_linex_lv", "baseline_expex_lv")) & !is.na(periods)]) + 
     geom_hline(aes(yintercept=range_num/100), color='gray', size=3)+
@@ -312,7 +316,7 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
   
   
 
-  
+  # aggregate scores by age, forecast date and period + some more detailed plots - for posterity 
   scores[, model := as.character(model)]
   
   # calculate scores aggregated by age and pandemic period
@@ -621,7 +625,3 @@ score_forecasts = function(samples_preds, pandemic_periods, suffix='', age_group
 
 }
 
-# score based on summary preds (output needed before run)
-
-
-# create tables of scores

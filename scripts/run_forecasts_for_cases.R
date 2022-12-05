@@ -62,7 +62,7 @@ for(r in c(1,4,5)){
   print(paste0('running model ', r))
   est <- future_lapply(
     dates, fit_NGM_model_for_date_range_cases,
-    age_mod = age_mod_cases,
+    age_model = age_mod_cases,
     period = period+smax*7, 
     smax = smax,
     inf_matrix_mean = case_matrix_mean, 
@@ -98,7 +98,7 @@ cms_pmd = cms_pmd[order(sr, cms_pmd$level1, cms_pmd$level2),]
 
 est <- future_lapply(
   dates, fit_NGM_model_for_date_range_cases,
-  age_mod = age_mod_cases,
+  age_model = age_mod_cases,
   period = period+smax*7, 
   smax = smax,
   inf_matrix_mean = case_matrix_mean, 

@@ -6,21 +6,21 @@ library(ggnewscale)
 source('R/score_forecasts_samples.R')
 source('R/plotting.R')
 
-
+# Load results 
 summary_preds_inf = readRDS('outputs/samples_preds_infweek.rds')
 summary_preds_cas = readRDS('outputs/samples_preds_cases.rds')
 
+# Load plots of data 
 inf_traj = readRDS('inf_traj.rds') 
 anb_traj = readRDS('anb_traj.rds')
 cas_traj = readRDS('cas_traj.rds')
-
+# Combine plots of data 
 inf_traj/anb_traj/cas_traj
-
+# Save combined plot
 ggsave('plots/inputs.pdf',  width=15, height=7)
 ggsave('plots/inputs.png',  width=15, height=7, units = 'in', dpi=300)
 
-
-
+# Make name vectors for age groups
 age_labs_inf_reverse = 1:7
 names(age_labs_inf_reverse) = c('2-10', '11-15', '16-24', '25-34', '35-49', '50-69', '70+' )
 
@@ -28,7 +28,7 @@ age_labs_inf_forward = names(age_labs_inf_reverse)
 names(age_labs_inf_forward) = age_labs_inf_reverse
 
 
-
+# Score infection forecasts using score_forecasts() from 'score_forecasts_sample.r'
 outs_inf = score_forecasts(summary_preds_inf[date > as.Date('2020-10-01') & !(run %in% c(2,3) | run=='baseline_linex_lv')], 
                                  pandemic_periods,
                                  suffix = '_infections', 
@@ -40,13 +40,14 @@ outs_inf = score_forecasts(summary_preds_inf[date > as.Date('2020-10-01') & !(ru
                                             'Exponential baseline', 
                                             'Fixed value baseline'))
 
-
+# put outputs in seperate containers
 summary_scores_inf = outs_inf[[1]]
 
 preds_plot_inf = outs_inf[[2]]
 scores_plot_inf = outs_inf[[3]]
 cov_plot_inf = outs_inf[[4]]
 range_plot_inf = outs_inf[[5]]
+
 
 
 overall_scores_inf = summary_scores_inf$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
@@ -61,12 +62,12 @@ overall_scores_inf = summary_scores_inf$score_overall[,c('model', 'horizon', 'cr
 ggplot(overall_scores_inf) + 
   geom_point(aes(x=model, y=crps, color=horizon))
 
-
+# store overall scores for infecions
 write.csv(dcast(overall_scores_inf, formula = horizon ~ model, value.var = 'crps'), file = 'outputs/overall_infections_table.csv')
   
 
+# summarise the scores by age_group
 age_scores_inf = summary_scores_inf$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'crps_rellv', 'ae_median_rel', 'ae_median_rellv', 'bias')]
-
 
 
 age_scores_inf[, age_index := age_labs_inf_reverse[age_group]]
@@ -74,7 +75,7 @@ age_scores_inf[, age_index := age_labs_inf_reverse[age_group]]
 vibrant = colour('vibrant')
 
 
-
+# plot the scores by age_group relative to no-interaction model
 age_inf = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
   #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.8)+
@@ -122,11 +123,13 @@ age_inf_lv = ggplot(age_scores_inf[model != 'baseline_linex_lv',]) +
   )
 
 
+
+# summarise the scores by period
 period_scores_inf = summary_scores_inf$score_by_period[,c('model', 'periods', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
 
 
-
+# plot the scores by period
 period_inf = ggplot(period_scores_inf[model != 'baseline_linex_lv' & periods != 'Schools \nre-opened',]) +
   geom_bump(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
   geom_point(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
@@ -173,6 +176,7 @@ period_inf_bias = ggplot(period_scores_inf[model != 'baseline_linex_lv' & period
   )
 
 
+# Score case forecasts using score_forecasts() from 'score_forecasts_sample.r'
 outs_cas = score_forecasts(summary_preds_cas[date > as.Date('2020-10-01') & !(run %in% c(2,3) | run=='baseline_linex_lv')], 
                                     pandemic_periods, 
                                     suffix = '_cases', 
@@ -183,6 +187,9 @@ outs_cas = score_forecasts(summary_preds_cas[date > as.Date('2020-10-01') & !(ru
                                                'Polymod contact data', 
                                                'Exponential baseline', 
                                                'Fixed value baseline'))
+
+# put outputs in seperate containers
+
 summary_scores_cas = outs_cas[[1]]
 
 
@@ -191,14 +198,19 @@ scores_plot_cas = outs_cas[[3]]
 cov_plot_cas = outs_cas[[4]]
 range_plot_cas = outs_cas[[5]]
 
+
+
 overall_scores_cas = summary_scores_cas$score_overall[,c('model', 'horizon', 'crps', 'ae_median', 'bias')]
+# store overall scores for infecions
 
 write.csv(dcast(overall_scores_cas, formula = horizon ~ model, value.var = 'crps'), file = 'outputs/overall_cases_table.csv')
 
+# summarise the scores by age_group
 
 age_scores_cas = summary_scores_cas$score_by_age[,c('model', 'age_group', 'horizon', 'crps_rel', 'ae_median_rel','crps_rellv', 'ae_median_rellv', 'bias')]
 
 
+# plot the scores by age_group
 
 age_cas = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   #geom_segment(aes(x=horizon, xend=horizon, y=1, yend=crps_rel), alpha=0.3)+
@@ -229,7 +241,7 @@ age_cas_lv = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   geom_bump(aes(x=horizon, y=crps_rellv, color=model), alpha=0.8)+
   geom_hline(yintercept = 1)+
   scale_y_continuous(trans='log2', name='CRPS')+
-  scale_x_discrete(labels=NULL, name='Horizon')+
+  scale_x_continuous(breaks=c(7,14,21,28), labels=c(1,2,3,4), name='Horizon (weeks)')+
   scale_color_manual(labels=c('CoMix contact data', 
                               'No contact data', 
                               'No interaction',
@@ -241,15 +253,18 @@ age_cas_lv = ggplot(age_scores_cas[model != 'baseline_linex_lv',]) +
   facet_wrap(~age_group, nrow=1)+
   ggtitle("C")+
   theme_minimal()+
-  theme(
-    axis.text.x = element_text(angle=90), 
-    legend.position = 'bottom'
+  theme( 
+    legend.position = 'bottom',
+    panel.grid.major.x = element_blank(), 
+    panel.grid.minor.x = element_blank()
   )
 
 
+# summarise the scores by period
 
 period_scores_cas = summary_scores_cas$score_by_period[,c('model', 'periods', 'horizon', 'crps_rel', 'ae_median_rel', 'bias')]
 
+# plot the scores by period
 
 period_cas = ggplot(period_scores_cas[model != 'baseline_linex_lv' & periods != 'Schools \nre-opened',]) +
   geom_bump(aes(x=horizon, y=crps_rel, color=model), alpha=0.6)+
@@ -313,7 +328,7 @@ period_all_bias = ggplot(rbind(period_scores_cas[,type:='cases'], period_scores_
 ggsave('plots/periods_bias.png',width = 7, height=5, units='in')
 
 
-
+# combine overall scores for infection and case forecasts
 
 overall_scores = rbind(overall_scores_inf[, type:='Infections'], overall_scores_cas[, type:='Cases'])
 
@@ -331,6 +346,8 @@ overall_scores[, c('type' ,'horizon'  ,           'model' ,     'crps', 'ae_medi
 write.csv(overall_scores[, c('type' ,'horizon'  ,           'model' ,     'crps', 'ae_median',         'bias',  'crps_rel' )]
 , 'outputs/overall_scores_rel.csv')
 
+# combine age stratified scores for infection and case forecasts
+
 age_scores = rbind(age_scores_inf[, -c('age_index')][, type:='Infections'], age_scores_cas[, type:='Cases'])
 
 
@@ -339,6 +356,8 @@ age_scores = rbind(age_scores_inf[, -c('age_index')][, type:='Infections'], age_
 write.csv(age_scores[, c('type' ,'horizon'  ,           'model' , 'age_group',    'crps_rel'   ,      'bias')]
           , 'outputs/age_scores_rel.csv')
 
+
+# combine period stratified scores for infection and case forecasts
 period_scores = rbind(period_scores_inf[, type:='Infections'], period_scores_cas[, type:='Cases'])
 
 
@@ -347,7 +366,7 @@ period_scores = rbind(period_scores_inf[, type:='Infections'], period_scores_cas
 write.csv(period_scores[, c('type' ,'horizon'  ,           'model' , 'periods',   'crps_rel'   ,      'bias')]
           , 'outputs/period_scores_rel.csv')
 
-
+# plot overall scores CRPS vs Bias
 overall_sp = 
   ggplot(overall_scores) + 
   #geom_curve(aes(x=model, xend=model, y=1, yend=crps_rel+horizon*0.00001, size=exp(horizon/7)), alpha=0.3, curvature = 0.15)+
@@ -364,7 +383,7 @@ overall_sp =
                               'Exponential baseline', 
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)), guide='none')+
-  scale_size(breaks = c(0,7,14,21,28))+
+  scale_size(breaks = c(0,7,14,21,28), labels=c(0,1,2,3,4))+
   scale_y_continuous(trans='log2', name='CRPS')+
   theme_minimal()+
   ggtitle('A')+
@@ -388,7 +407,7 @@ overall_sp_lv =
                               'Exponential baseline', 
                               'Fixed value baseline'), 
                      name = 'Model', values = as.vector(vibrant(6)), guide='none')+
-  scale_size(breaks = c(0,7,14,21,28))+
+  scale_size(breaks = c(0,7,14,21,28), labels=c(0,1,2,3,4), name='Horizon (weeks)')+
   scale_y_continuous(trans='log2', name='CRPS')+
   theme_minimal()+
   ggtitle('A')+
@@ -396,6 +415,9 @@ overall_sp_lv =
     axis.text.x = element_text(angle=90), 
     legend.position = 'bottom'
   )
+
+
+# combine overall and age-stratified scores 
 layout_overall = 
 "
 AABB
@@ -415,7 +437,7 @@ ggsave('plots/overall_results_lv.png', plot = overageres_lv, width = 12, height=
 
 
 
-
+# combine plots of forecasts for infections and cases with score by forecast date
 
 (((preds_plot_inf + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6),  labels=scales::comma) + ggtitle('A')) + (preds_plot_cas + scale_y_continuous(trans = 'log10', limits = c(1e2, 1e6),  labels=scales::comma) + ggtitle('B')))     /  
 ( ((scores_plot_inf + ggtitle('C')) + (scores_plot_cas + ggtitle('D'))))) / 
@@ -424,6 +446,8 @@ guide_area()  + plot_layout(guides = 'collect', heights=c(10,2,1))
 
 ggsave('plots/preds_scores_both.png', width=15, height=20, units='in')
 
+
+# combine coverage plots
 layout_covs = 
   "
 AABB
@@ -457,6 +481,8 @@ ggsave('plots/coverage_plot.png', width=11, height=8, units='in')
 
 
 
+
+# load parameter data 
 inf_pars = readRDS('outputs/summary_pars_infweek.rds')
 cas_pars = readRDS('outputs/summary_pars_cases.rds')
 
@@ -464,7 +490,7 @@ cas_pars = readRDS('outputs/summary_pars_cases.rds')
 plot_parameters(inf_pars, dates, '_infections')
 plot_parameters(cas_pars, dates, '_cases')
 
-
+# calculate inf and susc ratios for plot
 inf_pars_wide = dcast(unique(inf_pars[!is.na(index)]), formula = forecast_date + run + name ~ index , value.var = '50%')
 cas_pars_wide = dcast(unique(cas_pars[!is.na(index)]), formula = forecast_date + run + name ~ index , value.var = '50%')
 
@@ -482,6 +508,8 @@ par_labs = c('Infectiousness', 'Susceptibility')
 names(par_labs) = c('inf_rate', 'susceptibility')
 
 lab_dates
+
+# plot trajectories of inf and susc ratios
 
 ggplot(inf_pars_wide) +
   geom_path(aes(x=ad_rat, y=el_rat, color=forecast_date), size=1)+

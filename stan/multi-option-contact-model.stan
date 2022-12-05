@@ -108,14 +108,7 @@ transformed parameters{
    w_g[s] = w_g[s]/sum(w_g);
  }
  
- 
- //for (s in 1:smax) {
- //  w_g[s] = lognormal_cdf(s+1, w_mu, w_sig) - lognormal_cdf(s, w_mu, w_sig);
- //}
- //for (s in 1:(smax-1)) {
- //  w_g[s] = w_g[s]/sum(w_g);
- //}
- 
+
   
   if (sigma_option == 1) {
     for (t in 1:T) {

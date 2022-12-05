@@ -162,7 +162,7 @@ for(r in c(1,4,5)){
 
   est <- future_lapply(
     dates, fit_NGM_model_for_date_range,
-    age_mod = age_mod,
+    age_model = age_mod,
     period = period+smax*7, 
     smax = smax,
     inf_matrix_mean = inf_matrix_mean, 
@@ -197,7 +197,7 @@ cms_pmd = cms_pmd[order(sr, cms_pmd$level1, cms_pmd$level2),]
 
 est <- future_lapply(
   dates, fit_NGM_model_for_date_range,
-  age_mod = age_mod,
+  age_model = age_mod,
   period = period+smax*7, 
   smax = smax,
   inf_matrix_mean = inf_matrix_mean, 
@@ -285,34 +285,6 @@ for(i in 1:length(all_est)){
   summary_conts = rbind(summary_conts, data.table(all_est[[i]]$summary_conts))
 }
 
-ggplot(summary_preds) +
-  geom_line(data=summary_preds[ name=='forecast_gens' & date>forecast_date - 14], aes(x=date, y=value))+
-  geom_point(data=summary_preds[ name=='forecast_gens' & date>forecast_date], aes(x=date, y=`50%`, color=run), alpha=0.8, size=0.5)+ 
-  geom_ribbon(data=summary_preds[name=='forecast_gens' & date>forecast_date - 14], aes(x=date, ymin=`5%`, ymax=`95%`, fill=run), alpha=0.2)+
-  geom_line(data = summary_preds[time_index>smax & name=='next_gens' & date>forecast_date - 14], 
-            aes(x=date, y=`50%`, color=run), alpha=0.8)+
-  
-  geom_ribbon(data = summary_preds[time_index>smax & name=='next_gens' & date>forecast_date - 14], 
-              aes(x=date, ymin=`5%`, ymax=`95%`, fill=run), alpha=0.3)+
-  facet_grid(age_group~forecast_date, scales = 'free')+
-  theme(
-    legend.position = 'bottom'
-  )
-
-ggplot(summary_preds) +
-  geom_line(data=summary_preds[ name=='forecast_gens' & date>forecast_date - 14], aes(x=time_index, y=value))+
-  geom_point(data=summary_preds[ name=='forecast_gens' & date>forecast_date], aes(x=time_index, y=`50%`, color=run), alpha=0.8, size=0.5)+ 
-  geom_ribbon(data=summary_preds[name=='forecast_gens' & date>forecast_date - 14], aes(x=time_index, ymin=`5%`, ymax=`95%`), alpha=0.2)+
-  geom_line(data = summary_preds[time_index>smax & name=='next_gens' & date>forecast_date - 14], 
-            aes(x=time_index, y=`50%`, color=run), alpha=0.8)+
-  
-  #geom_ribbon(data = summary_preds[time_index>smax & name=='next_gens' & date>forecast_date - 14], 
-             # aes(x=time_index, ymin=`5%`, ymax=`95%`, fill=run), alpha=0.3)+
-  facet_grid(forecast_date ~ age_group, scales = 'free')+
-  theme(
-    legend.position = 'bottom'
-  )
-
 
 # save outputs 
 saveRDS(summary_pars, 'outputs/summary_pars_infweek.rds')
@@ -323,56 +295,6 @@ saveRDS(summary_diags, 'outputs/summary_diags_infweek.rds')
 
 
 saveRDS(samples_preds, 'outputs/samples_preds_infweek.rds')
-
-
-summary_scores = score_forecasts(summary_preds[date > as.Date('2020-10-01') & !(run %in% c(2,3))], 
-                                 pandemic_periods, 
-                                 age_groups = age_groups,
-                                 suffix = '_infections', 
-                                 labels = c('Full contact model', 
-                                            'No contact data', 
-                                            'Polymod data',
-                                            'No interaction', 
-                                             
-                                            'Exponential baseline', 
-                                            'Fixed value baseline', 
-                                            'Linear baseline'))
-
-overall_scores = summary_scores$score_overall[,c('model', 'interval_score', 'aem', 'bias')]
-
-overall_scores[, model := c('Full contact model', 
-                            'No contact data', 
-                            'No interaction',
-                            'Polymod data', 
-                            'Exponential baseline', 
-                            'Fixed value baseline')]
-
-age_scores = summary_scores$score_by_age[,c('model', 'age_group', 'crps_rel', 'bias')]
-
-
-ggplot(age_scores) +
-  geom_segment(aes(x=model, xend=model, y=1, yend=crps_rel), alpha=0.3)+
-  geom_point(aes(x=model, y=crps_rel, color=model))+
-  geom_hline(yintercept = 1)+
-  scale_y_continuous(trans='log2', name='Interval Score')+
-  scale_x_discrete(labels=NULL, name='')+
-  scale_color_discrete(labels=c('Full contact model', 
-                                'No contact data', 
-                                'No interaction',
-                                'Polymod data', 
-                                'Exponential baseline', 
-                                'Fixed value baseline', 
-                                'Linear baseline'), 
-                       name = 'Model')+
-  facet_wrap(~age_group, nrow=1)+
-  theme_minimal()+
-  theme(
-    axis.text.x = element_text(angle=90), 
-    legend.position = 'bottom'
-  )
-
-
-plot_parameters(summary_pars, dates, '_infections')
 
 
 
