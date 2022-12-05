@@ -39,7 +39,7 @@ cas_traj = ggplot(case_data_age_groups[date>lubridate::ymd(20200730)]) +
   theme(axis.text.x = element_text(angle = 45, size=10))
 
 
-saveRDS(cas_traj, 'case_traj.rds')
+saveRDS(cas_traj, 'data/case_traj.rds')
 
 
 case_matrix_mean  = dcast(case_data_age_groups, value.var = 'rolling_cases', date ~ age_group)

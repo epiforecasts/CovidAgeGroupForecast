@@ -100,8 +100,8 @@ anb_traj = ggplot(ab_estimates_weekly) +
   ggtitle('B')
 
 
-saveRDS(inf_traj, 'inf_traj.rds')
-saveRDS(anb_traj, 'anb_traj.rds')
+saveRDS(inf_traj, 'data/inf_traj.rds')
+saveRDS(anb_traj, 'data/anb_traj.rds')
 
 
 # combine and save time series plots

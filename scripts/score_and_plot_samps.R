@@ -11,9 +11,9 @@ summary_preds_inf = readRDS('outputs/samples_preds_infweek.rds')
 summary_preds_cas = readRDS('outputs/samples_preds_cases.rds')
 
 # Load plots of data 
-inf_traj = readRDS('inf_traj.rds') 
-anb_traj = readRDS('anb_traj.rds')
-cas_traj = readRDS('cas_traj.rds')
+inf_traj = readRDS('data/inf_traj.rds') 
+anb_traj = readRDS('data/anb_traj.rds')
+cas_traj = readRDS('data/cas_traj.rds')
 # Combine plots of data 
 inf_traj/anb_traj/cas_traj
 # Save combined plot
