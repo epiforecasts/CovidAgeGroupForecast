@@ -1,5 +1,7 @@
 # Age specific forecasts of SARS-CoV-2 infection using contact data
 
+> **Archived.** No longer maintained; last updated December 2022.
+
 ## Pipeline
 
 To run forecasts on historical dates, execute the 'run_forecasts_for_cases.r' or 'run_forecasts_for_infections.r' script and all models will be run for a series of forecast dates. To score the forecasts use the 'score_forecasts()' function which relys on the 'summary_preds' output generated from 'fit_model()' and combined for multiple runs within 'historical_estimates.r'.
